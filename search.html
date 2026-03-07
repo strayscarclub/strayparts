@@ -40,7 +40,7 @@
       padding: 14px 20px;
       font-size: 18px;
       border: none;
-      background: #ff5c5c;
+      background: #a42a0e;
       color: white;
       border-radius: 8px;
       cursor: pointer;
@@ -48,12 +48,12 @@
     }
 
     button:hover {
-      background: #a42a0e;
+      opacity: 0.9;
     }
 
     .results {
       margin-top: 40px;
-      max-width: 700px;
+      max-width: 780px;
       margin-left: auto;
       margin-right: auto;
     }
@@ -69,16 +69,22 @@
     .card h3 {
       margin-top: 0;
       margin-bottom: 8px;
+      font-size: 18px;
     }
 
     .card a {
-      color: #ff5c5c;
+      color: #a42a0e;
       text-decoration: none;
       font-weight: bold;
     }
 
     .card a:hover {
       text-decoration: underline;
+    }
+
+    .muted {
+      color: #999;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -94,77 +100,82 @@
   <div class="results" id="results"></div>
 
   <script>
-async function searchParts() {
+    async function searchParts() {
+      const input = document.getElementById("query");
+      const results = document.getElementById("results");
+      const query = input.value.trim();
 
-  const input = document.getElementById("query")
-  const results = document.getElementById("results")
-  const query = input.value.trim()
+      if (!query) {
+        results.innerHTML = `
+          <div class="card">
+            <h3>Enter a search term</h3>
+            <p>Try something like: GC8 seats, WRX turbo, BBS wheels 5x100</p>
+          </div>
+        `;
+        return;
+      }
 
-  if(!query){
-    results.innerHTML = "<p>Enter a search term</p>"
-    return
-  }
+      const encodedQuery = encodeURIComponent(query);
 
-  const encodedQuery = encodeURIComponent(query)
+      results.innerHTML = `
+        <div class="card">
+          <h3>Searching eBay...</h3>
+          <p class="muted">Looking for <strong>${query}</strong></p>
+        </div>
+      `;
 
-  results.innerHTML = "<p>Searching eBay...</p>"
+      try {
+        const res = await fetch(`/api/ebay?q=${encodedQuery}`);
+        const data = await res.json();
 
-  const rssUrl =
-  `https://api.allorigins.win/raw?url=https://www.ebay.com/sch/i.html?_nkw=${encodedQuery}&_rss=1`
+        let html = "";
 
-  try{
+        if (data.items && data.items.length > 0) {
+          data.items.forEach((item) => {
+            html += `
+              <div class="card">
+                <h3>${item.title}</h3>
+                <p class="muted">Live eBay result</p>
+                <a href="${item.link}" target="_blank" rel="noopener noreferrer">View on eBay</a>
+              </div>
+            `;
+          });
+        } else {
+          html += `
+            <div class="card">
+              <h3>No eBay results found</h3>
+              <a href="https://www.ebay.com/sch/i.html?_nkw=${encodedQuery}" target="_blank" rel="noopener noreferrer">Search directly on eBay</a>
+            </div>
+          `;
+        }
 
-    const res = await fetch(rssUrl)
-    const text = await res.text()
+        html += `
+          <div class="card">
+            <h3>Other Sources</h3>
+            <p><a href="https://www.facebook.com/marketplace/search/?query=${encodedQuery}" target="_blank" rel="noopener noreferrer">Search Facebook Marketplace</a></p>
+            <p><a href="https://auctions.yahoo.co.jp/search/search?p=${encodedQuery}" target="_blank" rel="noopener noreferrer">Search Yahoo Auctions Japan</a></p>
+            <p><a href="https://www.google.com/search?q=${encodedQuery}+car+parts" target="_blank" rel="noopener noreferrer">Search forums & listings</a></p>
+          </div>
+        `;
 
-    const parser = new DOMParser()
-    const xml = parser.parseFromString(text,"text/xml")
+        results.innerHTML = html;
+      } catch (error) {
+        results.innerHTML = `
+          <div class="card">
+            <h3>Could not load results</h3>
+            <p class="muted">Please try again.</p>
+          </div>
+        `;
+      }
+    }
 
-    const items = xml.querySelectorAll("item")
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q");
 
-    let html = ""
-
-    items.forEach((item,i)=>{
-
-      if(i > 5) return
-
-      const title = item.querySelector("title").textContent
-      const link = item.querySelector("link").textContent
-
-      html += `
-      <div class="card">
-        <h3>${title}</h3>
-        <a href="${link}" target="_blank">View on eBay</a>
-      </div>
-      `
-    })
-
-    html += `
-      <div class="card">
-      <h3>Search other sites</h3>
-      <a target="_blank" href="https://www.facebook.com/marketplace/search/?query=${encodedQuery}">
-      Facebook Marketplace
-      </a><br><br>
-
-      <a target="_blank" href="https://auctions.yahoo.co.jp/search/search?p=${encodedQuery}">
-      Yahoo Auctions Japan
-      </a><br><br>
-
-      <a target="_blank" href="https://www.google.com/search?q=${encodedQuery}+car+parts">
-      Forums & Listings
-      </a>
-      </div>
-    `
-
-    results.innerHTML = html
-
-  }catch(err){
-
-    results.innerHTML = "<p>Could not load eBay results.</p>"
-
-  }
-
-}
+    if (q) {
+      document.getElementById("query").value = q;
+      searchParts();
+    }
   </script>
 </body>
 </html>
