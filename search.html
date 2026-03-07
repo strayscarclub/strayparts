@@ -1,101 +1,155 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Search Parts - Stray Parts</title>
-<style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Search Parts - Stray Parts</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f0f0f;
+      color: white;
+      text-align: center;
+      padding: 60px 20px;
+      margin: 0;
+    }
 
-body{
-font-family: Arial;
-background:#0f0f0f;
-color:white;
-text-align:center;
-padding-top:80px;
-}
+    h1 {
+      margin-bottom: 10px;
+    }
 
-input{
-width:350px;
-padding:14px;
-font-size:18px;
-border-radius:6px;
-border:none;
-}
+    p {
+      color: #b0b0b0;
+    }
 
-button{
-padding:14px 20px;
-font-size:18px;
-border:none;
-background:#ff3b3b;
-color:white;
-border-radius:6px;
-cursor:pointer;
-margin-left:8px;
-}
+    .search-wrap {
+      margin-top: 30px;
+    }
 
-.results{
-margin-top:40px;
-}
+    input {
+      width: 320px;
+      max-width: 80vw;
+      padding: 14px;
+      font-size: 18px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+    }
 
-.card{
-background:#1c1c1c;
-padding:20px;
-margin:20px auto;
-width:420px;
-border-radius:10px;
-}
+    button {
+      padding: 14px 20px;
+      font-size: 18px;
+      border: none;
+      background: #ff3b3b;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-left: 8px;
+    }
 
-a{
-color:#ff3b3b;
-text-decoration:none;
-}
+    button:hover {
+      background: #e22f2f;
+    }
 
-</style>
+    .results {
+      margin-top: 40px;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .card {
+      background: #1c1c1c;
+      padding: 20px;
+      margin: 16px 0;
+      border-radius: 12px;
+      text-align: left;
+    }
+
+    .card h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .card a {
+      color: #ff5c5c;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .card a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
-
 <body>
+  <h1>Stray Parts Search</h1>
+  <p>Search multiple marketplaces for rare car parts</p>
 
-<h1>Stray Parts Search</h1>
+  <div class="search-wrap">
+    <input id="query" type="text" placeholder="Search car parts..." />
+    <button onclick="searchParts()">Search</button>
+  </div>
 
-<input id="query" placeholder="Search car parts...">
-<button onclick="search()">Search</button>
+  <div class="results" id="results"></div>
 
-<div class="results" id="results"></div>
+  <script>
+    function searchParts() {
+      const input = document.getElementById("query");
+      const results = document.getElementById("results");
+      const query = input.value.trim();
 
-<script>
+      if (!query) {
+        results.innerHTML = `
+          <div class="card">
+            <h3>Enter a search term</h3>
+            <p>Try something like: GC8 seats, WRX turbo, BBS wheels 5x100</p>
+          </div>
+        `;
+        return;
+      }
 
-async function search(){
+      const encodedQuery = encodeURIComponent(query);
 
-let query = document.getElementById("query").value
+      const ebayUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodedQuery}`;
+      const facebookUrl = `https://www.facebook.com/marketplace/search/?query=${encodedQuery}`;
+      const yahooUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodedQuery}`;
+      const googleUrl = `https://www.google.com/search?q=${encodedQuery}+car+parts`;
 
-let res = await fetch(`https://api.allorigins.win/get?url=https://www.ebay.com/sch/i.html?_nkw=${query}`)
+      results.innerHTML = `
+        <div class="card">
+          <h3>eBay</h3>
+          <p>Search eBay for: <strong>${query}</strong></p>
+          <a href="${ebayUrl}" target="_blank" rel="noopener noreferrer">View eBay listings</a>
+        </div>
 
-document.getElementById("results").innerHTML =
-`
-<div class="card">
-<h3>Search Results</h3>
-<p>Click below to view listings</p>
+        <div class="card">
+          <h3>Facebook Marketplace</h3>
+          <p>Search Marketplace for: <strong>${query}</strong></p>
+          <a href="${facebookUrl}" target="_blank" rel="noopener noreferrer">Search Facebook Marketplace</a>
+        </div>
 
-<a target="_blank" href="https://www.ebay.com/sch/i.html?_nkw=${query}">
-View eBay Listings
-</a>
+        <div class="card">
+          <h3>Yahoo Auctions Japan</h3>
+          <p>Search Yahoo Auctions Japan for: <strong>${query}</strong></p>
+          <a href="${yahooUrl}" target="_blank" rel="noopener noreferrer">Search Yahoo Auctions Japan</a>
+        </div>
 
-<br><br>
+        <div class="card">
+          <h3>Forums & web listings</h3>
+          <p>Search Google for forum posts and listings related to: <strong>${query}</strong></p>
+          <a href="${googleUrl}" target="_blank" rel="noopener noreferrer">Search forums & listings</a>
+        </div>
+      `;
+    }
 
-<a target="_blank" href="https://www.facebook.com/marketplace/search/?query=${query}">
-Search Facebook Marketplace
-</a>
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q");
 
-<br><br>
-
-<a target="_blank" href="https://auctions.yahoo.co.jp/search/search?p=${query}">
-Search Yahoo Auctions Japan
-</a>
-
-</div>
-`
-
-}
-
-</script>
-
+    if (q) {
+      document.getElementById("query").value = q;
+      searchParts();
+    }
+  </script>
 </body>
 </html>
