@@ -70,10 +70,11 @@ text-decoration:none;
 <button onclick="goSearch()">Search</button>
 
 <script>
-function goSearch(){
-let query = document.getElementById("search").value
-window.location.href = "/search.html?q=" + query
-}
+  function goSearch() {
+    const query = document.getElementById("search").value.trim();
+    if (!query) return;
+    window.location.href = "/search.html?q=" + encodeURIComponent(query);
+  }
 </script>
 </body>
 </html>
