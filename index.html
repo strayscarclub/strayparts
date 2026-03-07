@@ -67,31 +67,13 @@ text-decoration:none;
 <p>Find rare car parts across the internet</p>
 
 <input id="search" placeholder="Search parts...">
-<button onclick="searchParts()">Search</button>
-
-<div class="links" id="results"></div>
+<button onclick="goSearch()">Search</button>
 
 <script>
-
-function searchParts(){
-
-let query = document.getElementById("search").value;
-
-let ebay = "https://www.ebay.com/sch/i.html?_nkw=" + query;
-let google = "https://www.google.com/search?q=" + query + "+car+parts";
-let yahoo = "https://auctions.yahoo.co.jp/search/search?p=" + query;
-let marketplace = "https://www.facebook.com/marketplace/search/?query=" + query;
-
-document.getElementById("results").innerHTML = `
-<a href="${ebay}" target="_blank">Search eBay</a>
-<a href="${marketplace}" target="_blank">Search Facebook Marketplace</a>
-<a href="${google}" target="_blank">Search Forums & Listings</a>
-<a href="${yahoo}" target="_blank">Search Yahoo Japan Auctions</a>
-`;
-
+function goSearch(){
+let query = document.getElementById("search").value
+window.location.href = "/search.html?q=" + query
 }
-
 </script>
-
 </body>
 </html>
