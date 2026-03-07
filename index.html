@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Stray Parts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+
+body{
+font-family: Arial, sans-serif;
+text-align:center;
+background:#0e0e0e;
+color:white;
+padding-top:120px;
+}
+
+h1{
+font-size:60px;
+margin-bottom:10px;
+}
+
+p{
+color:#aaa;
+}
+
+input{
+width:320px;
+padding:14px;
+font-size:18px;
+border-radius:6px;
+border:none;
+margin-top:20px;
+}
+
+button{
+padding:14px 22px;
+font-size:18px;
+border:none;
+border-radius:6px;
+background:#ff3b3b;
+color:white;
+cursor:pointer;
+margin-left:8px;
+}
+
+button:hover{
+background:#ff1a1a;
+}
+
+.links{
+margin-top:40px;
+}
+
+a{
+display:block;
+color:#ccc;
+margin:6px;
+text-decoration:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Stray Parts</h1>
+
+<p>Find rare car parts across the internet</p>
+
+<input id="search" placeholder="Search parts...">
+<button onclick="searchParts()">Search</button>
+
+<div class="links" id="results"></div>
+
+<script>
+
+function searchParts(){
+
+let query = document.getElementById("search").value;
+
+let ebay = "https://www.ebay.com/sch/i.html?_nkw=" + query;
+let google = "https://www.google.com/search?q=" + query + "+car+parts";
+let yahoo = "https://auctions.yahoo.co.jp/search/search?p=" + query;
+let marketplace = "https://www.facebook.com/marketplace/search/?query=" + query;
+
+document.getElementById("results").innerHTML = `
+<a href="${ebay}" target="_blank">Search eBay</a>
+<a href="${marketplace}" target="_blank">Search Facebook Marketplace</a>
+<a href="${google}" target="_blank">Search Forums & Listings</a>
+<a href="${yahoo}" target="_blank">Search Yahoo Japan Auctions</a>
+`;
+
+}
+
+</script>
+
+</body>
+</html>
