@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Search Parts - Stray Parts</title>
+<style>
+
+body{
+font-family: Arial;
+background:#0f0f0f;
+color:white;
+text-align:center;
+padding-top:80px;
+}
+
+input{
+width:350px;
+padding:14px;
+font-size:18px;
+border-radius:6px;
+border:none;
+}
+
+button{
+padding:14px 20px;
+font-size:18px;
+border:none;
+background:#ff3b3b;
+color:white;
+border-radius:6px;
+cursor:pointer;
+margin-left:8px;
+}
+
+.results{
+margin-top:40px;
+}
+
+.card{
+background:#1c1c1c;
+padding:20px;
+margin:20px auto;
+width:420px;
+border-radius:10px;
+}
+
+a{
+color:#ff3b3b;
+text-decoration:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Stray Parts Search</h1>
+
+<input id="query" placeholder="Search car parts...">
+<button onclick="search()">Search</button>
+
+<div class="results" id="results"></div>
+
+<script>
+
+async function search(){
+
+let query = document.getElementById("query").value
+
+let res = await fetch(`https://api.allorigins.win/get?url=https://www.ebay.com/sch/i.html?_nkw=${query}`)
+
+document.getElementById("results").innerHTML =
+`
+<div class="card">
+<h3>Search Results</h3>
+<p>Click below to view listings</p>
+
+<a target="_blank" href="https://www.ebay.com/sch/i.html?_nkw=${query}">
+View eBay Listings
+</a>
+
+<br><br>
+
+<a target="_blank" href="https://www.facebook.com/marketplace/search/?query=${query}">
+Search Facebook Marketplace
+</a>
+
+<br><br>
+
+<a target="_blank" href="https://auctions.yahoo.co.jp/search/search?p=${query}">
+Search Yahoo Auctions Japan
+</a>
+
+</div>
+`
+
+}
+
+</script>
+
+</body>
+</html>
