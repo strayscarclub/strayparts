@@ -27,7 +27,7 @@
     }
 
     input {
-      width: 320px;
+      width: 360px;
       max-width: 80vw;
       padding: 14px;
       font-size: 18px;
@@ -53,23 +53,64 @@
 
     .results {
       margin-top: 40px;
-      max-width: 780px;
+      max-width: 980px;
       margin-left: auto;
       margin-right: auto;
     }
 
+    .section-title {
+      text-align: left;
+      font-size: 22px;
+      margin: 30px 0 12px 0;
+    }
+
     .card {
-      background: #1c1c1c;
-      padding: 20px;
-      margin: 16px 0;
-      border-radius: 12px;
+      background: #1b1b1b;
+      border-radius: 14px;
+      padding: 16px;
+      margin: 14px 0;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
       text-align: left;
     }
 
-    .card h3 {
-      margin-top: 0;
-      margin-bottom: 8px;
-      font-size: 18px;
+    .thumb {
+      width: 120px;
+      height: 120px;
+      border-radius: 10px;
+      background: #2a2a2a;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #777;
+      font-size: 13px;
+    }
+
+    .content {
+      flex: 1;
+    }
+
+    .title {
+      font-size: 19px;
+      font-weight: bold;
+      margin: 0 0 10px 0;
+      line-height: 1.4;
+      color: white;
+    }
+
+    .price {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: white;
+    }
+
+    .meta {
+      color: #9a9a9a;
+      font-size: 14px;
+      margin-bottom: 12px;
     }
 
     .card a {
@@ -80,6 +121,26 @@
 
     .card a:hover {
       text-decoration: underline;
+    }
+
+    .source-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .source-card {
+      background: #1b1b1b;
+      border-radius: 14px;
+      padding: 18px;
+      text-align: left;
+    }
+
+    .source-card h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 18px;
     }
 
     .muted {
@@ -100,7 +161,7 @@
   <div class="results" id="results"></div>
 
   <script>
-    async function searchParts() {
+    function searchParts() {
       const input = document.getElementById("query");
       const results = document.getElementById("results");
       const query = input.value.trim();
@@ -108,8 +169,10 @@
       if (!query) {
         results.innerHTML = `
           <div class="card">
-            <h3>Enter a search term</h3>
-            <p>Try something like: GC8 seats, WRX turbo, BBS wheels 5x100</p>
+            <div class="content">
+              <div class="title">Enter a search term</div>
+              <p>Try something like: GC8 seats, WRX turbo, BBS wheels 5x100</p>
+            </div>
           </div>
         `;
         return;
@@ -118,55 +181,60 @@
       const encodedQuery = encodeURIComponent(query);
 
       results.innerHTML = `
+        <div class="section-title">eBay Results</div>
+
         <div class="card">
-          <h3>Searching eBay...</h3>
-          <p class="muted">Looking for <strong>${query}</strong></p>
+          <div class="thumb">Image</div>
+          <div class="content">
+            <div class="title">Live eBay listings will appear here once the API is connected</div>
+            <div class="price">$---.--</div>
+            <div class="meta">Marketplace: eBay</div>
+            <a href="https://www.ebay.com/sch/i.html?_nkw=${encodedQuery}" target="_blank" rel="noopener noreferrer">
+              Search directly on eBay
+            </a>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="thumb">Image</div>
+          <div class="content">
+            <div class="title">This layout is ready for title, image, price and affiliate links</div>
+            <div class="price">$---.--</div>
+            <div class="meta">Marketplace: eBay</div>
+            <a href="https://www.ebay.com/sch/i.html?_nkw=${encodedQuery}" target="_blank" rel="noopener noreferrer">
+              View more on eBay
+            </a>
+          </div>
+        </div>
+
+        <div class="section-title">Other Sources</div>
+
+        <div class="source-grid">
+          <div class="source-card">
+            <h3>Facebook Marketplace</h3>
+            <p class="muted">Search Marketplace for <strong>${query}</strong></p>
+            <a href="https://www.facebook.com/marketplace/search/?query=${encodedQuery}" target="_blank" rel="noopener noreferrer">
+              Search Facebook Marketplace
+            </a>
+          </div>
+
+          <div class="source-card">
+            <h3>Yahoo Auctions Japan</h3>
+            <p class="muted">Search Yahoo Auctions Japan for <strong>${query}</strong></p>
+            <a href="https://auctions.yahoo.co.jp/search/search?p=${encodedQuery}" target="_blank" rel="noopener noreferrer">
+              Search Yahoo Auctions Japan
+            </a>
+          </div>
+
+          <div class="source-card">
+            <h3>Forums & Web Listings</h3>
+            <p class="muted">Search forums and listings related to <strong>${query}</strong></p>
+            <a href="https://www.google.com/search?q=${encodedQuery}+car+parts" target="_blank" rel="noopener noreferrer">
+              Search forums & listings
+            </a>
+          </div>
         </div>
       `;
-
-      try {
-        const res = await fetch(`/api/ebay?q=${encodedQuery}`);
-        const data = await res.json();
-
-        let html = "";
-
-        if (data.items && data.items.length > 0) {
-          data.items.forEach((item) => {
-            html += `
-              <div class="card">
-                <h3>${item.title}</h3>
-                <p class="muted">Live eBay result</p>
-                <a href="${item.link}" target="_blank" rel="noopener noreferrer">View on eBay</a>
-              </div>
-            `;
-          });
-        } else {
-          html += `
-            <div class="card">
-              <h3>No eBay results found</h3>
-              <a href="https://www.ebay.com/sch/i.html?_nkw=${encodedQuery}" target="_blank" rel="noopener noreferrer">Search directly on eBay</a>
-            </div>
-          `;
-        }
-
-        html += `
-          <div class="card">
-            <h3>Other Sources</h3>
-            <p><a href="https://www.facebook.com/marketplace/search/?query=${encodedQuery}" target="_blank" rel="noopener noreferrer">Search Facebook Marketplace</a></p>
-            <p><a href="https://auctions.yahoo.co.jp/search/search?p=${encodedQuery}" target="_blank" rel="noopener noreferrer">Search Yahoo Auctions Japan</a></p>
-            <p><a href="https://www.google.com/search?q=${encodedQuery}+car+parts" target="_blank" rel="noopener noreferrer">Search forums & listings</a></p>
-          </div>
-        `;
-
-        results.innerHTML = html;
-      } catch (error) {
-        results.innerHTML = `
-          <div class="card">
-            <h3>Could not load results</h3>
-            <p class="muted">Please try again.</p>
-          </div>
-        `;
-      }
     }
 
     const params = new URLSearchParams(window.location.search);
