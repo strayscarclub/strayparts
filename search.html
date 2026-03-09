@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Search Parts - Stray Parts</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = "https://gapajajlaerwfuqrdboz.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGFqYWpsYWVyd2Z1cXJkYm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMjI5ODIsImV4cCI6MjA4ODU5ODk4Mn0.sQ_WUObhZLHIPpEvO7lUjysHw58hNn_Pw6c4dft9hi8";
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
   <script>window._epn = {campaign: 5339144348, smartPopover:false};</script>
   <script src="https://epnt.ebay.com/static/epn-smart-tools.js"></script>
   <style>
@@ -163,10 +169,13 @@
   <h1>Stray Parts Search</h1>
   <p>Search multiple marketplaces for rare car parts</p>
 
-  <div class="search-wrap">
-    <input id="query" type="text" placeholder="Search car parts..." />
-    <button onclick="searchParts()">Search</button>
-  </div>
+ <div class="search-wrap">
+  <input id="query" type="text" placeholder="Search car parts..." />
+  <button onclick="searchParts()">Search</button>
+  <button onclick="saveCurrentSearch()">Save Search</button>
+</div>
+
+<p id="save-message" style="color:#555;margin-top:15px;"></p>
 
   <hr style="margin:40px auto;width:60%;border:0;border-top:1px solid #d6d1b9;">
 
@@ -303,6 +312,57 @@ const image = item.image && item.image.imageUrl
       document.getElementById("query").value = q;
       searchParts();
     }
+    async function saveCurrentSearch() {
+  const query = document.getElementById("query").value.trim();
+  const message = document.getElementById("save-message");
+
+  message.innerText = "";
+
+  if (!query) {
+    message.innerText = "Search for something first, then save it.";
+    return;
+  }
+
+  const { data: authData } = await supabaseClient.auth.getUser();
+  const user = authData.user;
+
+  if (!user) {
+    window.location.href = "/login.html";
+    return;
+  }
+
+  const { data: existingSearches, error: countError } = await supabaseClient
+    .from("saved_searches")
+    .select("id")
+    .eq("user_id", user.id);
+
+  if (countError) {
+    message.innerText = "Could not check saved searches.";
+    return;
+  }
+
+  if (existingSearches.length >= 3) {
+    message.innerText = "Free accounts can save up to 3 searches.";
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("saved_searches")
+    .insert([
+      {
+        user_id: user.id,
+        query: query,
+        alerts_enabled: false
+      }
+    ]);
+
+  if (error) {
+    message.innerText = error.message;
+    return;
+  }
+
+  message.innerText = "Search saved successfully.";
+}
   </script>
 
   <footer style="margin-top:80px;padding:30px 20px;border-top:1px solid #d6d1b9;text-align:center;">
