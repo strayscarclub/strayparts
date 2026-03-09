@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Saved Searches - Stray Parts</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #ede8d0;
+      color: #222;
+      padding: 60px 20px;
+      margin: 0;
+      text-align: center;
+    }
+
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #555;
+    }
+
+    .topbar {
+      margin-bottom: 30px;
+    }
+
+    button {
+      padding: 12px 18px;
+      font-size: 16px;
+      border: none;
+      background: #a42a0e;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 8px;
+    }
+
+    button:hover {
+      background: #c43c1d;
+    }
+
+    .card {
+      background: #1b1b1b;
+      color: white;
+      border-radius: 14px;
+      padding: 18px;
+      margin: 14px 0;
+      text-align: left;
+    }
+
+    .muted {
+      color: #aaa;
+      font-size: 14px;
+    }
+
+    a {
+      color: #a42a0e;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Saved Searches</h1>
+    <p>Your saved searches live here.</p>
+
+    <div class="topbar">
+      <a href="/search.html">Back to Search</a>
+      <button onclick="logOut()">Log Out</button>
+    </div>
+
+    <div id="account"></div>
+    <div id="saved-searches"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://gapajajlaerwfuqrdboz.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGFqYWpsYWVyd2Z1cXJkYm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMjI5ODIsImV4cCI6MjA4ODU5ODk4Mn0.sQ_WUObhZLHIPpEvO7lUjysHw58hNn_Pw6c4dft9hi8";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function loadPage() {
+      const { data: authData } = await supabaseClient.auth.getUser();
+      const user = authData.user;
+
+      if (!user) {
+        window.location.href = "/login.html";
+        return;
+      }
+
+      const accountDiv = document.getElementById("account");
+      const searchesDiv = document.getElementById("saved-searches");
+
+      const { data: profile } = await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (profile) {
+        accountDiv.innerHTML = `
+          <div class="card">
+            <h3>${profile.email}</h3>
+            <p class="muted">Plan: ${profile.plan}</p>
+          </div>
+        `;
+      }
+
+      const { data: searches, error } = await supabaseClient
+        .from("saved_searches")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        searchesDiv.innerHTML = `<p>Could not load saved searches.</p>`;
+        return;
+      }
+
+      if (!searches || searches.length === 0) {
+        searchesDiv.innerHTML = `
+          <div class="card">
+            <h3>No saved searches yet</h3>
+            <p class="muted">Go to the search page and save one.</p>
+          </div>
+        `;
+        return;
+      }
+
+      searchesDiv.innerHTML = searches.map(search => `
+        <div class="card">
+          <h3>${search.query}</h3>
+          <p class="muted">Alerts enabled: ${search.alerts_enabled ? "Yes" : "No"}</p>
+        </div>
+      `).join("");
+    }
+
+    async function logOut() {
+      await supabaseClient.auth.signOut();
+      window.location.href = "/";
+    }
+
+    loadPage();
+  </script>
+</body>
+</html>
