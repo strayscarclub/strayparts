@@ -1,51 +1,48 @@
 export default async function handler(req, res) {
-  const q = (req.query.q || "").trim();
 
-  if (!q) {
-    return res.status(400).json({ error: "Missing search query" });
+  const query = req.query.q
+
+  if(!query){
+    return res.status(400).json({error:"Missing query"})
   }
 
-  try {
-    const ebayRssUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(q)}&_rss=1`;
-    const response = await fetch(ebayRssUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 StrayPartsBot/1.0"
+  try{
+
+    const auth = Buffer.from(
+      process.env.EBAY_CLIENT_ID + ":" + process.env.EBAY_CLIENT_SECRET
+    ).toString("base64")
+
+    const tokenRes = await fetch(
+      "https://api.ebay.com/identity/v1/oauth2/token",
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/x-www-form-urlencoded",
+          "Authorization":"Basic " + auth
+        },
+        body:"grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope"
       }
-    });
+    )
 
-    const xml = await response.text();
+    const tokenData = await tokenRes.json()
 
-    const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0, 6);
+    const searchRes = await fetch(
+      `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=6`,
+      {
+        headers:{
+          "Authorization":"Bearer " + tokenData.access_token
+        }
+      }
+    )
 
-    const results = items.map((match) => {
-      const itemXml = match[1];
+    const searchData = await searchRes.json()
 
-      const getTag = (tag) => {
-        const m = itemXml.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
-        return m ? decode(m[1]) : "";
-      };
+    res.status(200).json(searchData)
 
-      return {
-        title: getTag("title"),
-        link: getTag("link"),
-        description: getTag("description")
-      };
-    });
+  }catch(err){
 
-    return res.status(200).json({ items: results });
-  } catch (error) {
-    return res.status(500).json({
-      error: "Failed to fetch eBay results"
-    });
+    res.status(500).json({error:"API error"})
+
   }
-}
 
-function decode(str) {
-  return str
-    .replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
 }
