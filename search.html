@@ -209,6 +209,9 @@
           data.itemSummaries.forEach((item) => {
             const title = item.title || "Untitled listing";
             const link = item.itemWebUrl || "#";
+            const affiliateLink =
+  "https://rover.ebay.com/rover/1/711-53200-19255-0/1?campid=5339144348&toolid=10001&mpre=" +
+  encodeURIComponent(link);
             const price = item.price
               ? `${item.price.value} ${item.price.currency}`
               : "Price not available";
