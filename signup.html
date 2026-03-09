@@ -1,1 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up - Stray Parts</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #ede8d0;
+      color: #222;
+      text-align: center;
+      padding: 60px 20px;
+      margin: 0;
+    }
 
+    .wrap {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #555;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-top: 12px;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 18px;
+      border: none;
+      background: #a42a0e;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 16px;
+    }
+
+    button:hover {
+      background: #c43c1d;
+    }
+
+    .message {
+      margin-top: 20px;
+      color: #555;
+    }
+
+    a {
+      color: #a42a0e;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Create Account</h1>
+    <p>Save searches now. Alerts and notifications will be available on paid plans.</p>
+
+    <input id="email" type="email" placeholder="Email address">
+    <input id="password" type="password" placeholder="Password">
+
+    <button onclick="signUp()">Sign Up</button>
+
+    <div class="message" id="message"></div>
+
+    <p style="margin-top:20px;">
+      Already have an account? <a href="/login.html">Log in</a>
+    </p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://gapajajlaerwfuqrdboz.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGFqYWpsYWVyd2Z1cXJkYm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMjI5ODIsImV4cCI6MjA4ODU5ODk4Mn0.sQ_WUObhZLHIPpEvO7lUjysHw58hNn_Pw6c4dft9hi8";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function signUp() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const message = document.getElementById("message");
+
+      message.innerText = "";
+
+      if (!email || !password) {
+        message.innerText = "Please enter an email and password.";
+        return;
+      }
+
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password
+      });
+
+      if (error) {
+        message.innerText = error.message;
+        return;
+      }
+
+      const user = data.user;
+
+      if (user) {
+        const { error: profileError } = await supabaseClient
+          .from("profiles")
+          .insert([
+            {
+              id: user.id,
+              email: user.email,
+              plan: "free"
+            }
+          ]);
+
+        if (profileError) {
+          message.innerText = profileError.message;
+          return;
+        }
+      }
+
+      message.innerText = "Account created. Redirecting...";
+      setTimeout(() => {
+        window.location.href = "/saved.html";
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
