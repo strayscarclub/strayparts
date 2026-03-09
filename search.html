@@ -209,14 +209,20 @@
 
         if (data.itemSummaries && data.itemSummaries.length > 0) {
           data.itemSummaries.forEach((item) => {
-            const title = item.title || "Untitled listing";
-            const link = item.itemWebUrl || "#";
-            const price = item.price
-              ? `${item.price.value} ${item.price.currency}`
-              : "Price not available";
-            const image = item.image && item.image.imageUrl
-              ? item.image.imageUrl
-              : "";
+          const title = item.title || "Untitled listing";
+          const rawLink = item.itemWebUrl || "#";
+          const affiliateLink =
+          rawLink +
+  (rawLink.includes("?") ? "&" : "?") +
+  "mkcid=1&mkrid=711-53200-19255-0&siteid=0&campid=5339144348&customid=&toolid=10001&mkevt=1";
+
+const price = item.price
+  ? `${item.price.value} ${item.price.currency}`
+  : "Price not available";
+
+const image = item.image && item.image.imageUrl
+  ? item.image.imageUrl
+  : "";
 
             html += `
               <div class="card">
@@ -229,7 +235,7 @@
                   <div class="title">${title}</div>
                   <div class="price">${price}</div>
                   <div class="meta">Marketplace: eBay</div>
-                  <a href="${link}" target="_blank" rel="noopener noreferrer">View on eBay</a>
+                  <a href="${affiliateLink}" target="_blank" rel="noopener noreferrer">View on eBay</a>
                 </div>
               </div>
             `;
