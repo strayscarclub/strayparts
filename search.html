@@ -172,7 +172,6 @@
  <div class="search-wrap">
   <input id="query" type="text" placeholder="Search car parts..." />
   <button onclick="searchParts()">Search</button>
-  <button onclick="saveCurrentSearch()">Save Search</button>
 </div>
 
 <p id="save-message" style="color:#555;margin-top:15px;"></p>
@@ -217,38 +216,29 @@
         let html = `<div class="section-title">eBay Results</div>`;
 
         if (data.itemSummaries && data.itemSummaries.length > 0) {
-          data.itemSummaries.forEach((item) => {
-          const title = item.title || "Untitled listing";
-          const rawLink = item.itemWebUrl || "#";
-          const affiliateLink =
-          rawLink +
-  (rawLink.includes("?") ? "&" : "?") +
-  "mkcid=1&mkrid=711-53200-19255-0&siteid=0&campid=5339144348&customid=&toolid=10001&mkevt=1";
-
-const price = item.price
-  ? `${item.price.value} ${item.price.currency}`
-  : "Price not available";
-
-const image = item.image && item.image.imageUrl
-  ? item.image.imageUrl
-  : "";
-
-            html += `
-              <div class="card">
-                ${
-                  image
-                    ? `<img class="thumb" src="${image}" alt="${title}">`
-                    : `<div class="thumb"></div>`
-                }
-                <div class="content">
-                  <div class="title">${title}</div>
-                  <div class="price">${price}</div>
-                  <div class="meta">Marketplace: eBay</div>
-                  <a href="${affiliateLink}" target="_blank" rel="noopener noreferrer">View on eBay</a>
-                </div>
-              </div>
-            `;
-          });
+        html += `
+  <div class="card">
+    ${
+      image
+        ? `<img class="thumb" src="${image}" alt="${title}">`
+        : `<div class="thumb"></div>`
+    }
+    <div class="content">
+      <div class="title">${title}</div>
+      <div class="price">${price}</div>
+      <div class="meta">Marketplace: eBay</div>
+      <a href="${affiliateLink}" target="_blank" rel="noopener noreferrer">View on eBay</a>
+      <br><br>
+      <button onclick="saveListing(
+        '${escapeJs(title)}',
+        '${escapeJs(affiliateLink)}',
+        '${escapeJs(image)}',
+        '${escapeJs(price)}',
+        'eBay'
+      )">Save Listing</button>
+    </div>
+  </div>
+`;
         } else {
           html += `
             <div class="card">
@@ -312,16 +302,8 @@ const image = item.image && item.image.imageUrl
       document.getElementById("query").value = q;
       searchParts();
     }
-    async function saveCurrentSearch() {
-  const query = document.getElementById("query").value.trim();
-  const message = document.getElementById("save-message");
-
-  message.innerText = "";
-
-  if (!query) {
-    message.innerText = "Search for something first, then save it.";
-    return;
-  }
+    async function saveListing(title, itemUrl, imageUrl, price, marketplace) {
+  const results = document.getElementById("results");
 
   const { data: authData } = await supabaseClient.auth.getUser();
   const user = authData.user;
@@ -331,37 +313,68 @@ const image = item.image && item.image.imageUrl
     return;
   }
 
-  const { data: existingSearches, error: countError } = await supabaseClient
-    .from("saved_searches")
+  const { data: profile } = await supabaseClient
+    .from("profiles")
+    .select("plan")
+    .eq("id", user.id)
+    .single();
+
+  const { data: existingListings, error: countError } = await supabaseClient
+    .from("saved_listings")
     .select("id")
     .eq("user_id", user.id);
 
   if (countError) {
-    message.innerText = "Could not check saved searches.";
+    alert("Could not check saved listings.");
     return;
   }
 
-  if (existingSearches.length >= 3) {
-    message.innerText = "Free accounts can save up to 3 searches.";
+  const isPaid = profile && profile.plan !== "free";
+
+  if (!isPaid && existingListings.length >= 5) {
+    alert("Free accounts can save up to 5 listings.");
+    return;
+  }
+
+  const { data: duplicate } = await supabaseClient
+    .from("saved_listings")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("item_url", itemUrl)
+    .maybeSingle();
+
+  if (duplicate) {
+    alert("You already saved this listing.");
     return;
   }
 
   const { error } = await supabaseClient
-    .from("saved_searches")
+    .from("saved_listings")
     .insert([
       {
         user_id: user.id,
-        query: query,
-        alerts_enabled: false
+        title,
+        item_url: itemUrl,
+        image_url: imageUrl,
+        price,
+        marketplace
       }
     ]);
 
   if (error) {
-    message.innerText = error.message;
+    alert(error.message);
     return;
   }
 
-  message.innerText = "Search saved successfully.";
+  alert("Listing saved.");
+}
+
+function escapeJs(str) {
+  return String(str || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, " ");
 }
   </script>
 
