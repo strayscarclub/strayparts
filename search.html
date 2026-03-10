@@ -180,203 +180,238 @@
 
   <div class="results" id="results"></div>
 
-  <script>
-    async function searchParts() {
-      const input = document.getElementById("query");
-      const results = document.getElementById("results");
-      const query = input.value.trim();
+ <script>
+  async function searchParts() {
+    const input = document.getElementById("query");
+    const results = document.getElementById("results");
+    const query = input.value.trim();
 
-      if (!query) {
-        results.innerHTML = `
-          <div class="card">
-            <div class="content">
-              <div class="title">Enter a search term</div>
-              <p>Try something like: GC8 seats, WRX turbo, BBS wheels 5x100</p>
-            </div>
-          </div>
-        `;
-        return;
-      }
-
-      const encodedQuery = encodeURIComponent(query);
-
+    if (!query) {
       results.innerHTML = `
         <div class="card">
           <div class="content">
-            <div class="title">Searching eBay...</div>
-            <p class="muted">Looking for <strong>${query}</strong></p>
+            <div class="title">Enter a search term</div>
+            <p>Try something like: GC8 seats, WRX turbo, BBS wheels 5x100</p>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const encodedQuery = encodeURIComponent(query);
+
+    results.innerHTML = `
+      <div class="card">
+        <div class="content">
+          <div class="title">Searching eBay...</div>
+          <p class="muted">Looking for <strong>${escapeHtml(query)}</strong></p>
+        </div>
+      </div>
+    `;
+
+    try {
+      const res = await fetch("/api/ebay?q=" + encodedQuery);
+      const data = await res.json();
+
+      let html = `<div class="section-title">eBay Results</div>`;
+
+      if (data.itemSummaries && data.itemSummaries.length > 0) {
+        data.itemSummaries.forEach((item) => {
+          const title = item.title || "Untitled listing";
+          const rawLink = item.itemWebUrl || "#";
+          const affiliateLink =
+            rawLink +
+            (rawLink.includes("?") ? "&" : "?") +
+            "mkcid=1&mkrid=711-53200-19255-0&siteid=0&campid=5339144348&customid=&toolid=10001&mkevt=1";
+
+          const price = item.price
+            ? `${item.price.value} ${item.price.currency}`
+            : "Price not available";
+
+          const image = item.image && item.image.imageUrl
+            ? item.image.imageUrl
+            : "";
+
+          html += `
+            <div class="card">
+              ${
+                image
+                  ? `<img class="thumb" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">`
+                  : `<div class="thumb"></div>`
+              }
+              <div class="content">
+                <div class="title">${escapeHtml(title)}</div>
+                <div class="price">${escapeHtml(price)}</div>
+                <div class="meta">Marketplace: eBay</div>
+                <a href="${escapeHtml(affiliateLink)}" target="_blank" rel="noopener noreferrer">View on eBay</a>
+                <br><br>
+                <button onclick="saveListing(
+                  '${escapeJs(title)}',
+                  '${escapeJs(affiliateLink)}',
+                  '${escapeJs(image)}',
+                  '${escapeJs(price)}',
+                  'eBay'
+                )">Save Listing</button>
+              </div>
+            </div>
+          `;
+        });
+      } else {
+        html += `
+          <div class="card">
+            <div class="content">
+              <div class="title">No eBay results found</div>
+              <a href="https://www.ebay.com/sch/i.html?_nkw=${encodedQuery}" target="_blank" rel="noopener noreferrer">
+                Search directly on eBay
+              </a>
+            </div>
+          </div>
+        `;
+      }
+
+      html += `
+        <div class="section-title">Other Sources</div>
+
+        <div class="source-grid">
+          <div class="source-card">
+            <h3>Facebook Marketplace</h3>
+            <p class="muted">Search Marketplace for <strong>${escapeHtml(query)}</strong></p>
+            <a href="https://www.facebook.com/marketplace/search/?query=${encodedQuery}" target="_blank" rel="noopener noreferrer">
+              Search Facebook Marketplace
+            </a>
+          </div>
+
+          <div class="source-card">
+            <h3>Yahoo Auctions Japan</h3>
+            <p class="muted">Search Yahoo Auctions Japan for <strong>${escapeHtml(query)}</strong></p>
+            <a href="https://auctions.yahoo.co.jp/search/search?p=${encodedQuery}" target="_blank" rel="noopener noreferrer">
+              Search Yahoo Auctions Japan
+            </a>
+          </div>
+
+          <div class="source-card">
+            <h3>Forums & Web Listings</h3>
+            <p class="muted">Search forums and listings related to <strong>${escapeHtml(query)}</strong></p>
+            <a href="https://www.google.com/search?q=${encodedQuery}+car+parts" target="_blank" rel="noopener noreferrer">
+              Search forums & listings
+            </a>
           </div>
         </div>
       `;
 
-      try {
-        const res = await fetch("/api/ebay?q=" + encodedQuery);
-        const data = await res.json();
-
-        let html = `<div class="section-title">eBay Results</div>`;
-
-        if (data.itemSummaries && data.itemSummaries.length > 0) {
-        html += `
-  <div class="card">
-    ${
-      image
-        ? `<img class="thumb" src="${image}" alt="${title}">`
-        : `<div class="thumb"></div>`
+      results.innerHTML = html;
+    } catch (error) {
+      results.innerHTML = `
+        <div class="card">
+          <div class="content">
+            <div class="title">Could not load results</div>
+            <p class="muted">Please try again.</p>
+          </div>
+        </div>
+      `;
     }
-    <div class="content">
-      <div class="title">${title}</div>
-      <div class="price">${price}</div>
-      <div class="meta">Marketplace: eBay</div>
-      <a href="${affiliateLink}" target="_blank" rel="noopener noreferrer">View on eBay</a>
-      <br><br>
-      <button onclick="saveListing(
-        '${escapeJs(title)}',
-        '${escapeJs(affiliateLink)}',
-        '${escapeJs(image)}',
-        '${escapeJs(price)}',
-        'eBay'
-      )">Save Listing</button>
-    </div>
-  </div>
-`;
-        } else {
-          html += `
-            <div class="card">
-              <div class="content">
-                <div class="title">No eBay results found</div>
-                <a href="https://www.ebay.com/sch/i.html?_nkw=${encodedQuery}" target="_blank" rel="noopener noreferrer">
-                  Search directly on eBay
-                </a>
-              </div>
-            </div>
-          `;
+  }
+
+  async function saveListing(title, itemUrl, imageUrl, price, marketplace) {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    const user = authData.user;
+
+    if (!user) {
+      window.location.href = "/login.html";
+      return;
+    }
+
+    const { data: profile, error: profileError } = await supabaseClient
+      .from("profiles")
+      .select("plan")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError) {
+      alert("Could not load your account plan.");
+      return;
+    }
+
+    const { data: existingListings, error: countError } = await supabaseClient
+      .from("saved_listings")
+      .select("id")
+      .eq("user_id", user.id);
+
+    if (countError) {
+      alert("Could not check saved listings.");
+      return;
+    }
+
+    const isPaid = profile && profile.plan !== "free";
+
+    if (!isPaid && existingListings.length >= 5) {
+      alert("Free accounts can save up to 5 listings.");
+      return;
+    }
+
+    const { data: duplicate, error: duplicateError } = await supabaseClient
+      .from("saved_listings")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("item_url", itemUrl)
+      .maybeSingle();
+
+    if (duplicateError) {
+      alert("Could not check for duplicate listing.");
+      return;
+    }
+
+    if (duplicate) {
+      alert("You already saved this listing.");
+      return;
+    }
+
+    const { error } = await supabaseClient
+      .from("saved_listings")
+      .insert([
+        {
+          user_id: user.id,
+          title,
+          item_url: itemUrl,
+          image_url: imageUrl,
+          price,
+          marketplace
         }
+      ]);
 
-        html += `
-          <div class="section-title">Other Sources</div>
-
-          <div class="source-grid">
-            <div class="source-card">
-              <h3>Facebook Marketplace</h3>
-              <p class="muted">Search Marketplace for <strong>${query}</strong></p>
-              <a href="https://www.facebook.com/marketplace/search/?query=${encodedQuery}" target="_blank" rel="noopener noreferrer">
-                Search Facebook Marketplace
-              </a>
-            </div>
-
-            <div class="source-card">
-              <h3>Yahoo Auctions Japan</h3>
-              <p class="muted">Search Yahoo Auctions Japan for <strong>${query}</strong></p>
-              <a href="https://auctions.yahoo.co.jp/search/search?p=${encodedQuery}" target="_blank" rel="noopener noreferrer">
-                Search Yahoo Auctions Japan
-              </a>
-            </div>
-
-            <div class="source-card">
-              <h3>Forums & Web Listings</h3>
-              <p class="muted">Search forums and listings related to <strong>${query}</strong></p>
-              <a href="https://www.google.com/search?q=${encodedQuery}+car+parts" target="_blank" rel="noopener noreferrer">
-                Search forums & listings
-              </a>
-            </div>
-          </div>
-        `;
-
-        results.innerHTML = html;
-      } catch (error) {
-        results.innerHTML = `
-          <div class="card">
-            <div class="content">
-              <div class="title">Could not load results</div>
-              <p class="muted">Please try again.</p>
-            </div>
-          </div>
-        `;
-      }
+    if (error) {
+      alert(error.message);
+      return;
     }
 
-    const params = new URLSearchParams(window.location.search);
-    const q = params.get("q");
-
-    if (q) {
-      document.getElementById("query").value = q;
-      searchParts();
-    }
-    async function saveListing(title, itemUrl, imageUrl, price, marketplace) {
-  const results = document.getElementById("results");
-
-  const { data: authData } = await supabaseClient.auth.getUser();
-  const user = authData.user;
-
-  if (!user) {
-    window.location.href = "/login.html";
-    return;
+    alert("Listing saved.");
   }
 
-  const { data: profile } = await supabaseClient
-    .from("profiles")
-    .select("plan")
-    .eq("id", user.id)
-    .single();
-
-  const { data: existingListings, error: countError } = await supabaseClient
-    .from("saved_listings")
-    .select("id")
-    .eq("user_id", user.id);
-
-  if (countError) {
-    alert("Could not check saved listings.");
-    return;
+  function escapeHtml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
-  const isPaid = profile && profile.plan !== "free";
-
-  if (!isPaid && existingListings.length >= 5) {
-    alert("Free accounts can save up to 5 listings.");
-    return;
+  function escapeJs(str) {
+    return String(str || "")
+      .replace(/\\/g, "\\\\")
+      .replace(/'/g, "\\'")
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, " ");
   }
 
-  const { data: duplicate } = await supabaseClient
-    .from("saved_listings")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("item_url", itemUrl)
-    .maybeSingle();
+  const params = new URLSearchParams(window.location.search);
+  const q = params.get("q");
 
-  if (duplicate) {
-    alert("You already saved this listing.");
-    return;
+  if (q) {
+    document.getElementById("query").value = q;
+    searchParts();
   }
-
-  const { error } = await supabaseClient
-    .from("saved_listings")
-    .insert([
-      {
-        user_id: user.id,
-        title,
-        item_url: itemUrl,
-        image_url: imageUrl,
-        price,
-        marketplace
-      }
-    ]);
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  alert("Listing saved.");
-}
-
-function escapeJs(str) {
-  return String(str || "")
-    .replace(/\\/g, "\\\\")
-    .replace(/'/g, "\\'")
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, " ");
-}
-  </script>
+</script>
 
   <footer style="margin-top:80px;padding:30px 20px;border-top:1px solid #d6d1b9;text-align:center;">
     <p style="color:#666;font-size:14px;margin-bottom:14px;">
