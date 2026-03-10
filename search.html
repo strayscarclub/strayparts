@@ -4,14 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Search Parts - Stray Parts</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const SUPABASE_URL = "https://gapajajlaerwfuqrdboz.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGFqYWpsYWVyd2Z1cXJkYm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMjI5ODIsImV4cCI6MjA4ODU5ODk4Mn0.sQ_WUObhZLHIPpEvO7lUjysHw58hNn_Pw6c4dft9hi8";
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-</script>
-  <script>window._epn = {campaign: 5339144348, smartPopover:false};</script>
-  <script src="https://epnt.ebay.com/static/epn-smart-tools.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -21,6 +13,29 @@
       padding: 60px 20px;
       margin: 0;
       position: relative;
+    }
+
+    .account-bar {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+
+    .account-bar a,
+    .account-bar button {
+      margin-left: 10px;
+      background: none;
+      border: none;
+      color: #a42a0e;
+      font-size: 15px;
+      text-decoration: none;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .account-bar a:hover,
+    .account-bar button:hover {
+      color: #c43c1d;
     }
 
     h1 {
@@ -59,6 +74,15 @@
 
     button:hover {
       background: #c43c1d;
+    }
+
+    .secondary-btn {
+      background: #2a2a2a;
+      color: white;
+    }
+
+    .secondary-btn:hover {
+      background: #3a3a3a;
     }
 
     .results {
@@ -164,426 +188,22 @@
       color: #aaa;
       font-size: 14px;
     }
-    .account-bar {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-}
-
-.account-bar a,
-.account-bar button {
-  margin-left: 10px;
-  background: none;
-  border: none;
-  color: #a42a0e;
-  font-size: 15px;
-  text-decoration: none;
-  cursor: pointer;
-  padding: 0;
-}
-
-.account-bar a:hover,
-.account-bar button:hover {
-  color: #c43c1d;
-}
-    .secondary-btn {
-  background: #2a2a2a;
-  color: white;
-}
-
-.secondary-btn:hover {
-  background: #3a3a3a;
-}
   </style>
 </head>
 <body>
   <div class="account-bar" id="account-bar"></div>
+
   <h1>Stray Parts Search</h1>
   <p>Search multiple marketplaces for rare car parts</p>
 
- <div class="search-wrap">
-  <input id="query" type="text" placeholder="Search car parts..." />
-  <button onclick="searchParts()">Search</button>
-</div>
-
-<p id="save-message" style="color:#555;margin-top:15px;"></p>
+  <div class="search-wrap">
+    <input id="query" type="text" placeholder="Search car parts..." />
+    <button onclick="searchParts()">Search</button>
+  </div>
 
   <hr style="margin:40px auto;width:60%;border:0;border-top:1px solid #d6d1b9;">
 
   <div class="results" id="results"></div>
-
- <script>
-  async function searchParts() {
-    const input = document.getElementById("query");
-    const results = document.getElementById("results");
-    const query = input.value.trim();
-
-    if (!query) {
-      results.innerHTML = `
-        <div class="card">
-          <div class="content">
-            <div class="title">Enter a search term</div>
-            <p>Try something like: GC8 seats, WRX turbo, BBS wheels 5x100</p>
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    const encodedQuery = encodeURIComponent(query);
-
-    results.innerHTML = `
-      <div class="card">
-        <div class="content">
-          <div class="title">Searching eBay...</div>
-          <p class="muted">Looking for <strong>${escapeHtml(query)}</strong></p>
-        </div>
-      </div>
-    `;
-
-    try {
-      const res = await fetch("/api/ebay?q=" + encodedQuery);
-      const data = await res.json();
-
-      let html = `<div class="section-title">eBay Results</div>`;
-
-      if (data.itemSummaries && data.itemSummaries.length > 0) {
-        data.itemSummaries.forEach((item) => {
-          const title = item.title || "Untitled listing";
-          const rawLink = item.itemWebUrl || "#";
-          const affiliateLink =
-            rawLink +
-            (rawLink.includes("?") ? "&" : "?") +
-            "mkcid=1&mkrid=711-53200-19255-0&siteid=0&campid=5339144348&customid=&toolid=10001&mkevt=1";
-
-          const price = item.price
-            ? `${item.price.value} ${item.price.currency}`
-            : "Price not available";
-
-          const image = item.image && item.image.imageUrl
-            ? item.image.imageUrl
-            : "";
-
-          html += `
-            <div class="card">
-              ${
-                image
-                  ? `<img class="thumb" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">`
-                  : `<div class="thumb"></div>`
-              }
-              <div class="content">
-                <div class="title">${escapeHtml(title)}</div>
-                <div class="price">${escapeHtml(price)}</div>
-                <div class="meta">Marketplace: eBay</div>
-                <a href="${escapeHtml(affiliateLink)}" target="_blank" rel="noopener noreferrer">View on eBay</a>
-                <br><br>
-                <button onclick="saveListing(
-  '${escapeJs(title)}',
-  '${escapeJs(affiliateLink)}',
-  '${escapeJs(image)}',
-  '${escapeJs(price)}',
-  'eBay'
-)">Save Listing</button>
-
-<button class="secondary-btn" onclick="createAlertFromCurrentSearch()">Create Alert</button>
-              </div>
-            </div>
-          `;
-        });
-      } else {
-        html += `
-          <div class="card">
-            <div class="content">
-              <div class="title">No eBay results found</div>
-              <a href="https://www.ebay.com/sch/i.html?_nkw=${encodedQuery}" target="_blank" rel="noopener noreferrer">
-                Search directly on eBay
-              </a>
-            </div>
-          </div>
-        `;
-      }
-
-      html += `
-        <div class="section-title">Other Sources</div>
-
-        <div class="source-grid">
-          <div class="source-card">
-            <h3>Facebook Marketplace</h3>
-            <p class="muted">Search Marketplace for <strong>${escapeHtml(query)}</strong></p>
-            <a href="https://www.facebook.com/marketplace/search/?query=${encodedQuery}" target="_blank" rel="noopener noreferrer">
-              Search Facebook Marketplace
-            </a>
-          </div>
-
-          <div class="source-card">
-            <h3>Yahoo Auctions Japan</h3>
-            <p class="muted">Search Yahoo Auctions Japan for <strong>${escapeHtml(query)}</strong></p>
-            <a href="https://auctions.yahoo.co.jp/search/search?p=${encodedQuery}" target="_blank" rel="noopener noreferrer">
-              Search Yahoo Auctions Japan
-            </a>
-          </div>
-
-          <div class="source-card">
-            <h3>Forums & Web Listings</h3>
-            <p class="muted">Search forums and listings related to <strong>${escapeHtml(query)}</strong></p>
-            <a href="https://www.google.com/search?q=${encodedQuery}+car+parts" target="_blank" rel="noopener noreferrer">
-              Search forums & listings
-            </a>
-          </div>
-        </div>
-      `;
-
-      results.innerHTML = html;
-    } catch (error) {
-      results.innerHTML = `
-        <div class="card">
-          <div class="content">
-            <div class="title">Could not load results</div>
-            <p class="muted">Please try again.</p>
-          </div>
-        </div>
-      `;
-    }
-  }
-
-  async function saveListing(title, itemUrl, imageUrl, price, marketplace) {
-    const { data: authData } = await supabaseClient.auth.getUser();
-    const user = authData.user;
-
-    if (!user) {
-      window.location.href = "/login.html";
-      return;
-    }
-
-    const { data: profile, error: profileError } = await supabaseClient
-      .from("profiles")
-      .select("plan")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError) {
-      alert("Could not load your account plan.");
-      return;
-    }
-
-    const { data: existingListings, error: countError } = await supabaseClient
-      .from("saved_listings")
-      .select("id")
-      .eq("user_id", user.id);
-
-    if (countError) {
-      alert("Could not check saved listings.");
-      return;
-    }
-
-    const isPaid = profile && profile.plan !== "free";
-
-    if (!isPaid && existingListings.length >= 5) {
-  const upgrade = confirm(
-    "Free accounts can save up to 5 listings. Upgrade your plan for unlimited saved listings and notified searches. Go to pricing page now?"
-  );
-
-  if (upgrade) {
-    window.location.href = "/pricing.html";
-  }
-
-  return;
-}
-
-    const { data: duplicate, error: duplicateError } = await supabaseClient
-      .from("saved_listings")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("item_url", itemUrl)
-      .maybeSingle();
-
-    if (duplicateError) {
-      alert("Could not check for duplicate listing.");
-      return;
-    }
-
-    if (duplicate) {
-      alert("You already saved this listing.");
-      return;
-    }
-
-    const { error } = await supabaseClient
-      .from("saved_listings")
-      .insert([
-        {
-          user_id: user.id,
-          title,
-          item_url: itemUrl,
-          image_url: imageUrl,
-          price,
-          marketplace
-        }
-      ]);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    alert("Listing saved.");
-  }
-
-  function escapeHtml(str) {
-    return String(str || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
-  function escapeJs(str) {
-    return String(str || "")
-      .replace(/\\/g, "\\\\")
-      .replace(/'/g, "\\'")
-      .replace(/"/g, '\\"')
-      .replace(/\n/g, " ");
-  }
-
-  const params = new URLSearchParams(window.location.search);
-  const q = params.get("q");
-
-  if (q) {
-    document.getElementById("query").value = q;
-    searchParts();
-  }
-   async function createAlertFromCurrentSearch() {
-  const query = document.getElementById("query").value.trim();
-
-  if (!query) {
-    alert("Search for something first.");
-    return;
-  }
-
-  const { data: authData } = await supabaseClient.auth.getUser();
-  const user = authData.user;
-
-  if (!user) {
-    window.location.href = "/login.html";
-    return;
-  }
-
-  const { data: profile, error: profileError } = await supabaseClient
-    .from("profiles")
-    .select("plan")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError || !profile) {
-    alert("Could not load your account plan.");
-    return;
-  }
-
-  const plan = profile.plan || "free";
-
-  if (plan === "free") {
-    const upgrade = confirm(
-      "Notified searches are available on paid plans only. Upgrade now?"
-    );
-
-    if (upgrade) {
-      window.location.href = "/pricing.html";
-    }
-
-    return;
-  }
-
-  const { data: existingAlerts, error: countError } = await supabaseClient
-    .from("notified_searches")
-    .select("id")
-    .eq("user_id", user.id);
-
-  if (countError) {
-    alert("Could not check your notified searches.");
-    return;
-  }
-
-  const limit = plan === "builder" ? 10 : 30;
-
-  if (existingAlerts.length >= limit) {
-    if (plan === "builder") {
-      const upgrade = confirm(
-        "Builder accounts can have up to 10 notified searches. Upgrade to Collector for up to 30?"
-      );
-
-      if (upgrade) {
-        window.location.href = "/pricing.html";
-      }
-    } else {
-      alert("Collector accounts can have up to 30 notified searches.");
-    }
-
-    return;
-  }
-
-  const { data: duplicate, error: duplicateError } = await supabaseClient
-    .from("notified_searches")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("query", query)
-    .maybeSingle();
-
-  if (duplicateError) {
-    alert("Could not check for duplicate alert.");
-    return;
-  }
-
-  if (duplicate) {
-    alert("You already created an alert for this search.");
-    return;
-  }
-
-  const { error } = await supabaseClient
-    .from("notified_searches")
-    .insert([
-      {
-        user_id: user.id,
-        query: query,
-        is_active: true
-      }
-    ]);
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  alert("Notified search created.");
-}
-</script>
-  <script>
-  async function loadAccountBar() {
-    const accountBar = document.getElementById("account-bar");
-    if (!accountBar) return;
-
-    const { data: authData } = await supabaseClient.auth.getUser();
-    const user = authData.user;
-
-    if (user) {
-      accountBar.innerHTML = `
-        <a href="/saved.html">Saved Listings</a>
-        <button onclick="logOut()">Log Out</button>
-      `;
-    } else {
-      accountBar.innerHTML = `
-        <a href="/login.html">Log In</a>
-        <a href="/signup.html">Sign Up</a>
-      `;
-    }
-  }
-
-  async function logOut() {
-    await supabaseClient.auth.signOut();
-    window.location.href = "/";
-  }
-
-  loadAccountBar();
-</script>
 
   <footer style="margin-top:80px;padding:30px 20px;border-top:1px solid #d6d1b9;text-align:center;">
     <p style="color:#666;font-size:14px;margin-bottom:14px;">
@@ -602,5 +222,278 @@
       © Stray Parts
     </p>
   </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://gapajajlaerwfuqrdboz.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGFqYWpsYWVyd2Z1cXJkYm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMjI5ODIsImV4cCI6MjA4ODU5ODk4Mn0.sQ_WUObhZLHIPpEvO7lUjysHw58hNn_Pw6c4dft9hi8";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function loadAccountBar() {
+      const accountBar = document.getElementById("account-bar");
+      if (!accountBar) return;
+
+      const { data: authData } = await supabaseClient.auth.getUser();
+      const user = authData.user;
+
+      if (user) {
+        accountBar.innerHTML = `
+          <a href="/saved.html">Saved Listings</a>
+          <a href="/alerts.html">Alerts</a>
+          <button onclick="logOut()">Log Out</button>
+        `;
+      } else {
+        accountBar.innerHTML = `
+          <a href="/login.html">Log In</a>
+          <a href="/signup.html">Sign Up</a>
+        `;
+      }
+    }
+
+    async function logOut() {
+      await supabaseClient.auth.signOut();
+      window.location.href = "/";
+    }
+
+    async function searchParts() {
+      const input = document.getElementById("query");
+      const results = document.getElementById("results");
+      const query = input.value.trim();
+
+      if (!query) {
+        results.innerHTML = `
+          <div class="card">
+            <div class="content">
+              <div class="title">Enter a search term</div>
+              <p>Try something like: GC8 seats, WRX turbo, BBS wheels 5x100</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const encodedQuery = encodeURIComponent(query);
+
+      results.innerHTML = `
+        <div class="card">
+          <div class="content">
+            <div class="title">Searching eBay...</div>
+            <p class="muted">Looking for <strong>${escapeHtml(query)}</strong></p>
+          </div>
+        </div>
+      `;
+
+      try {
+        const res = await fetch("/api/ebay?q=" + encodedQuery);
+        const data = await res.json();
+
+        let html = `<div class="section-title">eBay Results</div>`;
+
+        if (data.itemSummaries && data.itemSummaries.length > 0) {
+          data.itemSummaries.forEach((item) => {
+            const title = item.title || "Untitled listing";
+            const rawLink = item.itemWebUrl || "#";
+            const affiliateLink =
+              rawLink +
+              (rawLink.includes("?") ? "&" : "?") +
+              "mkcid=1&mkrid=711-53200-19255-0&siteid=0&campid=5339144348&customid=&toolid=10001&mkevt=1";
+
+            const price = item.price
+              ? `${item.price.value} ${item.price.currency}`
+              : "Price not available";
+
+            const image = item.image && item.image.imageUrl
+              ? item.image.imageUrl
+              : "";
+
+            html += `
+              <div class="card">
+                ${
+                  image
+                    ? `<img class="thumb" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">`
+                    : `<div class="thumb"></div>`
+                }
+                <div class="content">
+                  <div class="title">${escapeHtml(title)}</div>
+                  <div class="price">${escapeHtml(price)}</div>
+                  <div class="meta">Marketplace: eBay</div>
+                  <a href="${escapeHtml(affiliateLink)}" target="_blank" rel="noopener noreferrer">View on eBay</a>
+                  <br><br>
+                  <button onclick="saveListing(
+                    '${escapeJs(title)}',
+                    '${escapeJs(affiliateLink)}',
+                    '${escapeJs(image)}',
+                    '${escapeJs(price)}',
+                    'eBay'
+                  )">Save Listing</button>
+                </div>
+              </div>
+            `;
+          });
+        } else {
+          html += `
+            <div class="card">
+              <div class="content">
+                <div class="title">No eBay results found</div>
+                <a href="https://www.ebay.com/sch/i.html?_nkw=${encodedQuery}" target="_blank" rel="noopener noreferrer">
+                  Search directly on eBay
+                </a>
+              </div>
+            </div>
+          `;
+        }
+
+        html += `
+          <div class="section-title">Other Sources</div>
+
+          <div class="source-grid">
+            <div class="source-card">
+              <h3>Facebook Marketplace</h3>
+              <p class="muted">Search Marketplace for <strong>${escapeHtml(query)}</strong></p>
+              <a href="https://www.facebook.com/marketplace/search/?query=${encodedQuery}" target="_blank" rel="noopener noreferrer">
+                Search Facebook Marketplace
+              </a>
+            </div>
+
+            <div class="source-card">
+              <h3>Yahoo Auctions Japan</h3>
+              <p class="muted">Search Yahoo Auctions Japan for <strong>${escapeHtml(query)}</strong></p>
+              <a href="https://auctions.yahoo.co.jp/search/search?p=${encodedQuery}" target="_blank" rel="noopener noreferrer">
+                Search Yahoo Auctions Japan
+              </a>
+            </div>
+
+            <div class="source-card">
+              <h3>Forums & Web Listings</h3>
+              <p class="muted">Search forums and listings related to <strong>${escapeHtml(query)}</strong></p>
+              <a href="https://www.google.com/search?q=${encodedQuery}+car+parts" target="_blank" rel="noopener noreferrer">
+                Search forums & listings
+              </a>
+            </div>
+          </div>
+        `;
+
+        results.innerHTML = html;
+      } catch (error) {
+        results.innerHTML = `
+          <div class="card">
+            <div class="content">
+              <div class="title">Could not load results</div>
+              <p class="muted">Please try again.</p>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    async function saveListing(title, itemUrl, imageUrl, price, marketplace) {
+      const { data: authData } = await supabaseClient.auth.getUser();
+      const user = authData.user;
+
+      if (!user) {
+        window.location.href = "/login.html";
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabaseClient
+        .from("profiles")
+        .select("plan")
+        .eq("id", user.id)
+        .single();
+
+      if (profileError) {
+        alert("Could not load your account plan.");
+        return;
+      }
+
+      const { data: existingListings, error: countError } = await supabaseClient
+        .from("saved_listings")
+        .select("id")
+        .eq("user_id", user.id);
+
+      if (countError) {
+        alert("Could not check saved listings.");
+        return;
+      }
+
+      const isPaid = profile && profile.plan !== "free";
+
+      if (!isPaid && existingListings.length >= 5) {
+        const upgrade = confirm(
+          "Free accounts can save up to 5 listings. Upgrade your plan for unlimited saved listings and notified searches. Go to pricing page now?"
+        );
+
+        if (upgrade) {
+          window.location.href = "/pricing.html";
+        }
+
+        return;
+      }
+
+      const { data: duplicate, error: duplicateError } = await supabaseClient
+        .from("saved_listings")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("item_url", itemUrl)
+        .maybeSingle();
+
+      if (duplicateError) {
+        alert("Could not check for duplicate listing.");
+        return;
+      }
+
+      if (duplicate) {
+        alert("You already saved this listing.");
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from("saved_listings")
+        .insert([
+          {
+            user_id: user.id,
+            title,
+            item_url: itemUrl,
+            image_url: imageUrl,
+            price,
+            marketplace
+          }
+        ]);
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      alert("Listing saved.");
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function escapeJs(str) {
+      return String(str || "")
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, " ");
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q");
+
+    if (q) {
+      document.getElementById("query").value = q;
+      searchParts();
+    }
+
+    loadAccountBar();
+  </script>
 </body>
 </html>
