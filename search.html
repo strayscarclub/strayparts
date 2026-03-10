@@ -369,9 +369,16 @@
     const isPaid = profile && profile.plan !== "free";
 
     if (!isPaid && existingListings.length >= 5) {
-      alert("Free accounts can save up to 5 listings.");
-      return;
-    }
+  const upgrade = confirm(
+    "Free accounts can save up to 5 listings. Upgrade your plan for unlimited saved listings and notified searches. Go to pricing page now?"
+  );
+
+  if (upgrade) {
+    window.location.href = "/pricing.html";
+  }
+
+  return;
+}
 
     const { data: duplicate, error: duplicateError } = await supabaseClient
       .from("saved_listings")
