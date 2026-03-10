@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notified Searches - Stray Parts</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #ede8d0;
+      color: #222;
+      padding: 60px 20px;
+      margin: 0;
+      text-align: center;
+    }
+
+    .wrap {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #555;
+    }
+
+    .topbar {
+      margin-bottom: 30px;
+    }
+
+    button {
+      padding: 12px 18px;
+      font-size: 16px;
+      border: none;
+      background: #a42a0e;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 8px;
+    }
+
+    button:hover {
+      background: #c43c1d;
+    }
+
+    .secondary-btn {
+      background: #2a2a2a;
+      color: white;
+    }
+
+    .secondary-btn:hover {
+      background: #3a3a3a;
+    }
+
+    .card {
+      background: #1b1b1b;
+      color: white;
+      border-radius: 14px;
+      padding: 18px;
+      margin: 14px 0;
+      text-align: left;
+    }
+
+    .title {
+      font-size: 19px;
+      font-weight: bold;
+      margin: 0 0 10px 0;
+      line-height: 1.4;
+      color: white;
+    }
+
+    .meta {
+      color: #aaa;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .actions {
+      margin-top: 14px;
+    }
+
+    .message {
+      margin-top: 16px;
+      color: #555;
+    }
+
+    a {
+      color: #a42a0e;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    a:hover {
+      color: #c43c1d;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Notified Searches</h1>
+    <p>Your monitored searches for newly listed parts.</p>
+
+    <div class="topbar">
+      <a href="/search.html">Back to Search</a>
+      <button onclick="logOut()">Log Out</button>
+    </div>
+
+    <div id="account"></div>
+    <div id="message" class="message"></div>
+    <div id="alerts-list"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://gapajajlaerwfuqrdboz.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGFqYWpsYWVyd2Z1cXJkYm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMjI5ODIsImV4cCI6MjA4ODU5ODk4Mn0.sQ_WUObhZLHIPpEvO7lUjysHw58hNn_Pw6c4dft9hi8";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentUser = null;
+    let currentPlan = "free";
+
+    async function loadPage() {
+      const { data: authData } = await supabaseClient.auth.getUser();
+      const user = authData.user;
+
+      if (!user) {
+        window.location.href = "/login.html";
+        return;
+      }
+
+      currentUser = user;
+
+      const accountDiv = document.getElementById("account");
+
+      const { data: profile, error: profileError } = await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (profileError) {
+        accountDiv.innerHTML = `
+          <div class="card">
+            <div class="title">Could not load account profile</div>
+          </div>
+        `;
+        return;
+      }
+
+      currentPlan = profile.plan || "free";
+
+      let limitText = "No alerts available on Free.";
+      if (currentPlan === "builder") limitText = "Builder plan: up to 10 notified searches.";
+      if (currentPlan === "collector") limitText = "Collector plan: up to 30 notified searches.";
+
+      accountDiv.innerHTML = `
+        <div class="card">
+          <div class="title">${profile.email}</div>
+          <div class="meta">Plan: ${currentPlan}</div>
+          <div class="meta">${limitText}</div>
+        </div>
+      `;
+
+      await loadAlerts();
+    }
+
+    async function loadAlerts() {
+      const alertsDiv = document.getElementById("alerts-list");
+
+      const { data: alerts, error } = await supabaseClient
+        .from("notified_searches")
+        .select("*")
+        .eq("user_id", currentUser.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        alertsDiv.innerHTML = `<p>Could not load notified searches.</p>`;
+        return;
+      }
+
+      if (!alerts || alerts.length === 0) {
+        alertsDiv.innerHTML = `
+          <div class="card">
+            <div class="title">No notified searches yet</div>
+            <p class="meta">Create one from the search page.</p>
+          </div>
+        `;
+        return;
+      }
+
+      alertsDiv.innerHTML = alerts.map(alert => `
+        <div class="card">
+          <div class="title">${escapeHtml(alert.query)}</div>
+          <div class="meta">Active: ${alert.is_active ? "Yes" : "No"}</div>
+
+          <div class="actions">
+            <button onclick="runSearch('${escapeJs(alert.query)}')">Search</button>
+            <button class="secondary-btn" onclick="deleteAlert('${alert.id}')">Delete</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function runSearch(query) {
+      window.location.href = "/search.html?q=" + encodeURIComponent(query);
+    }
+
+    async function deleteAlert(alertId) {
+      const message = document.getElementById("message");
+      message.innerText = "";
+
+      const confirmed = confirm("Delete this notified search?");
+      if (!confirmed) return;
+
+      const { error } = await supabaseClient
+        .from("notified_searches")
+        .delete()
+        .eq("id", alertId)
+        .eq("user_id", currentUser.id);
+
+      if (error) {
+        message.innerText = "Could not delete notified search.";
+        return;
+      }
+
+      message.innerText = "Notified search deleted.";
+      await loadAlerts();
+    }
+
+    async function logOut() {
+      await supabaseClient.auth.signOut();
+      window.location.href = "/";
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function escapeJs(str) {
+      return String(str || "")
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, " ");
+    }
+
+    loadPage();
+  </script>
+</body>
+</html>
