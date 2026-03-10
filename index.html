@@ -1,101 +1,155 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
- 
-<title>Stray Parts</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script>window._epn = {campaign: 5339144348, smartPopover:false};</script>
-<script src="https://epnt.ebay.com/static/epn-smart-tools.js"></script>
-<style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stray Parts</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #ede8d0;
+      color: #222;
+      padding-top: 120px;
+      position: relative;
+      margin: 0;
+    }
 
-body{
-font-family: Arial, sans-serif;
-text-align:center;
-background: #ede8d0;
-color: #222;
-padding-top:120px;
-}
+    .account-bar {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
 
-h1{
-font-size:60px;
-margin-bottom:10px;
-}
+    .account-bar a,
+    .account-bar button {
+      margin-left: 10px;
+      background: none;
+      border: none;
+      color: #a42a0e;
+      font-size: 15px;
+      text-decoration: none;
+      cursor: pointer;
+      padding: 0;
+    }
 
-p{
-color:#555;
-}
+    .account-bar a:hover,
+    .account-bar button:hover {
+      color: #c43c1d;
+    }
 
-input{
-width:320px;
-padding:14px;
-font-size:18px;
-border-radius:6px;
-border:none;
-margin-top:20px;
-}
+    h1 {
+      font-size: 60px;
+      margin-bottom: 10px;
+    }
 
-button{
-padding:14px 22px;
-font-size:18px;
-border:none;
-border-radius:6px;
-background: #a42a0e;
-color:white;
-cursor:pointer;
-margin-left:8px;
-}
+    p {
+      color: #555;
+    }
 
-button:hover{
-background: #c43c1d;
-}
+    input {
+      width: 320px;
+      padding: 14px;
+      font-size: 18px;
+      border-radius: 6px;
+      border: none;
+      margin-top: 20px;
+    }
 
-.links{
-margin-top:40px;
-}
+    button.search-btn {
+      padding: 14px 22px;
+      font-size: 18px;
+      border: none;
+      border-radius: 6px;
+      background: #a42a0e;
+      color: white;
+      cursor: pointer;
+      margin-left: 8px;
+    }
 
-a{
-color:#a42a0e;
-text-decoration:none;
-}
+    button.search-btn:hover {
+      background: #c43c1d;
+    }
 
-</style>
+    a {
+      color: #a42a0e;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: #c43c1d;
+    }
+  </style>
 </head>
-
 <body>
 
-<h1>Stray Parts</h1>
+  <div class="account-bar" id="account-bar"></div>
 
-<p>Find rare car parts across the internet</p>
+  <h1>Stray Parts</h1>
 
-<input id="search" placeholder="Search parts...">
-<button onclick="goSearch()">Search</button>
+  <p>Find rare car parts across the internet</p>
 
-<hr style="margin:40px auto;width:60%;border:0;border-top:1px solid #d6d1b9;">
+  <input id="search" placeholder="Search parts...">
+  <button class="search-btn" onclick="goSearch()">Search</button>
 
-<script>
-  function goSearch() {
-    const query = document.getElementById("search").value.trim();
-    if (!query) return;
-    window.location.href = "/search.html?q=" + encodeURIComponent(query);
-  }
-</script>
+  <hr style="margin:40px auto;width:60%;border:0;border-top:1px solid #d6d1b9;">
 
-<footer style="margin-top:80px;padding:30px 20px;border-top:1px solid #d6d1b9;text-align:center;">
-  <p style="color:#666;font-size:14px;margin-bottom:14px;">
-    Stray Parts searches marketplaces like eBay, Facebook Marketplace and Yahoo Auctions to help enthusiasts find rare car parts faster.
-  </p>
+  <footer style="margin-top:80px;padding:30px 20px;border-top:1px solid #d6d1b9;text-align:center;">
+    <p style="color:#666;font-size:14px;margin-bottom:14px;">
+      Stray Parts searches marketplaces like eBay, Facebook Marketplace and Yahoo Auctions to help enthusiasts find rare car parts faster.
+    </p>
 
-  <div style="margin-bottom:12px;">
-    <a href="/" style="color:#a42a0e;text-decoration:none;margin:0 10px;">Home</a>
-    <a href="/about.html" style="color:#a42a0e;text-decoration:none;margin:0 10px;">About</a>
-    <a href="/contact.html" style="color:#a42a0e;text-decoration:none;margin:0 10px;">Contact</a>
-    <a href="/privacy.html" style="color:#a42a0e;text-decoration:none;margin:0 10px;">Privacy</a>
-    <a href="/pricing.html" style="color:#a42a0e;text-decoration:none;margin:0 10px;">Pricing</a>
-  </div>
+    <div style="margin-bottom:12px;">
+      <a href="/" style="margin:0 10px;">Home</a>
+      <a href="/about.html" style="margin:0 10px;">About</a>
+      <a href="/contact.html" style="margin:0 10px;">Contact</a>
+      <a href="/privacy.html" style="margin:0 10px;">Privacy</a>
+      <a href="/pricing.html" style="margin:0 10px;">Pricing</a>
+    </div>
 
-  <p style="color:#888;font-size:13px;margin:0;">
-    © Stray Parts
-  </p>
-</footer>
+    <p style="color:#888;font-size:13px;margin:0;">
+      © Stray Parts
+    </p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://gapajajlaerwfuqrdboz.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGFqYWpsYWVyd2Z1cXJkYm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMjI5ODIsImV4cCI6MjA4ODU5ODk4Mn0.sQ_WUObhZLHIPpEvO7lUjysHw58hNn_Pw6c4dft9hi8";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function goSearch() {
+      const query = document.getElementById("search").value.trim();
+      if (!query) return;
+      window.location.href = "/search.html?q=" + encodeURIComponent(query);
+    }
+
+    async function loadAccountBar() {
+      const accountBar = document.getElementById("account-bar");
+      if (!accountBar) return;
+
+      const { data: authData } = await supabaseClient.auth.getUser();
+      const user = authData.user;
+
+      if (user) {
+        accountBar.innerHTML = `
+          <a href="/saved.html">Saved Listings</a>
+          <button onclick="logOut()">Log Out</button>
+        `;
+      } else {
+        accountBar.innerHTML = `
+          <a href="/login.html">Log In</a>
+          <a href="/signup.html">Sign Up</a>
+        `;
+      }
+    }
+
+    async function logOut() {
+      await supabaseClient.auth.signOut();
+      window.location.href = "/";
+    }
+
+    loadAccountBar();
+  </script>
 </body>
 </html>
