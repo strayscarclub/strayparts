@@ -12,6 +12,30 @@
       padding: 60px 20px;
       margin: 0;
       text-align: center;
+      position: relative;
+    }
+
+    .account-bar {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+
+    .account-bar a,
+    .account-bar button {
+      margin-left: 10px;
+      background: none;
+      border: none;
+      color: #a42a0e;
+      font-size: 15px;
+      text-decoration: none;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .account-bar a:hover,
+    .account-bar button:hover {
+      color: #c43c1d;
     }
 
     .wrap {
@@ -122,13 +146,14 @@
   </style>
 </head>
 <body>
+  <div class="account-bar" id="account-bar"></div>
+
   <div class="wrap">
     <h1>Saved Listings</h1>
     <p>Your saved parts listings live here.</p>
 
     <div class="topbar">
       <a href="/search.html">Back to Search</a>
-      <button onclick="logOut()">Log Out</button>
     </div>
 
     <div id="account"></div>
@@ -144,6 +169,27 @@
 
     let currentUser = null;
     let currentPlan = "free";
+
+    async function loadAccountBar() {
+      const accountBar = document.getElementById("account-bar");
+      if (!accountBar) return;
+
+      const { data: authData } = await supabaseClient.auth.getUser();
+      const user = authData.user;
+
+      if (user) {
+        accountBar.innerHTML = `
+          <a href="/saved.html">Saved Listings</a>
+          <a href="/alerts.html">Alerts</a>
+          <button onclick="logOut()">Log Out</button>
+        `;
+      } else {
+        accountBar.innerHTML = `
+          <a href="/login.html">Log In</a>
+          <a href="/signup.html">Sign Up</a>
+        `;
+      }
+    }
 
     async function loadPage() {
       const { data: authData } = await supabaseClient.auth.getUser();
@@ -277,6 +323,7 @@
         .replace(/'/g, "&#039;");
     }
 
+    loadAccountBar();
     loadPage();
   </script>
 </body>
