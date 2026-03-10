@@ -181,7 +181,7 @@ async function sendAlertEmail(toEmail, query, items) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      from: "alerts@strayparts.io",
+      from: "delivered@resend.dev",
       to: toEmail,
       subject,
       html
