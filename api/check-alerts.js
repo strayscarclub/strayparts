@@ -145,7 +145,7 @@ async function sendAlertEmail(toEmail, query, items) {
       : `${items.length} new Stray Parts matches for "${query}"`;
 
   const itemsHtml = items
-    .slice(0, 10)
+    .slice(0, 5)
     .map(
       (item) => `
         <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid #ddd;">
