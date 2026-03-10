@@ -12,6 +12,30 @@
       padding: 60px 20px;
       margin: 0;
       text-align: center;
+      position: relative;
+    }
+
+    .account-bar {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+
+    .account-bar a,
+    .account-bar button {
+      margin-left: 10px;
+      background: none;
+      border: none;
+      color: #a42a0e;
+      font-size: 15px;
+      text-decoration: none;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .account-bar a:hover,
+    .account-bar button:hover {
+      color: #c43c1d;
     }
 
     .wrap {
@@ -29,6 +53,16 @@
 
     .topbar {
       margin-bottom: 30px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-top: 12px;
+      box-sizing: border-box;
     }
 
     button {
@@ -87,6 +121,15 @@
       color: #555;
     }
 
+    .form-card {
+      background: #1b1b1b;
+      color: white;
+      border-radius: 14px;
+      padding: 20px;
+      margin: 24px 0;
+      text-align: left;
+    }
+
     a {
       color: #a42a0e;
       text-decoration: none;
@@ -99,17 +142,26 @@
   </style>
 </head>
 <body>
+  <div class="account-bar" id="account-bar"></div>
+
   <div class="wrap">
     <h1>Notified Searches</h1>
-    <p>Your monitored searches for newly listed parts.</p>
+    <p>Track the parts you want and get notified when new listings appear.</p>
 
     <div class="topbar">
       <a href="/search.html">Back to Search</a>
-      <button onclick="logOut()">Log Out</button>
     </div>
 
     <div id="account"></div>
     <div id="message" class="message"></div>
+
+    <div class="form-card">
+      <div class="title">Create New Alert</div>
+      <p class="meta">Example: recaro confetti seats, gc8 turbo, ej207 engine</p>
+      <input id="alert-query" type="text" placeholder="Enter part you want to track">
+      <button onclick="createAlert()">Create Alert</button>
+    </div>
+
     <div id="alerts-list"></div>
   </div>
 
@@ -121,6 +173,27 @@
 
     let currentUser = null;
     let currentPlan = "free";
+
+    async function loadAccountBar() {
+      const accountBar = document.getElementById("account-bar");
+      if (!accountBar) return;
+
+      const { data: authData } = await supabaseClient.auth.getUser();
+      const user = authData.user;
+
+      if (user) {
+        accountBar.innerHTML = `
+          <a href="/saved.html">Saved Listings</a>
+          <a href="/alerts.html">Alerts</a>
+          <button onclick="logOut()">Log Out</button>
+        `;
+      } else {
+        accountBar.innerHTML = `
+          <a href="/login.html">Log In</a>
+          <a href="/signup.html">Sign Up</a>
+        `;
+      }
+    }
 
     async function loadPage() {
       const { data: authData } = await supabaseClient.auth.getUser();
@@ -152,9 +225,9 @@
 
       currentPlan = profile.plan || "free";
 
-      let limitText = "No alerts available on Free.";
-      if (currentPlan === "builder") limitText = "Builder plan: up to 10 notified searches.";
-      if (currentPlan === "collector") limitText = "Collector plan: up to 30 notified searches.";
+      let limitText = "Free plan: no notified searches included.";
+      if (currentPlan === "builder") limitText = "Builder plan: up to 10 notified searches. Checked every hour.";
+      if (currentPlan === "collector") limitText = "Collector plan: up to 30 notified searches. Checked every hour.";
 
       accountDiv.innerHTML = `
         <div class="card">
@@ -185,7 +258,7 @@
         alertsDiv.innerHTML = `
           <div class="card">
             <div class="title">No notified searches yet</div>
-            <p class="meta">Create one from the search page.</p>
+            <p class="meta">Create one above to start tracking parts.</p>
           </div>
         `;
         return;
@@ -202,6 +275,93 @@
           </div>
         </div>
       `).join("");
+    }
+
+    async function createAlert() {
+      const query = document.getElementById("alert-query").value.trim();
+      const message = document.getElementById("message");
+      message.innerText = "";
+
+      if (!query) {
+        message.innerText = "Enter a part name to track.";
+        return;
+      }
+
+      if (currentPlan === "free") {
+        const upgrade = confirm(
+          "Notified searches are available on paid plans only. Upgrade now?"
+        );
+
+        if (upgrade) {
+          window.location.href = "/pricing.html";
+        }
+
+        return;
+      }
+
+      const { data: existingAlerts, error: countError } = await supabaseClient
+        .from("notified_searches")
+        .select("id")
+        .eq("user_id", currentUser.id);
+
+      if (countError) {
+        message.innerText = "Could not check your alert limits.";
+        return;
+      }
+
+      const limit = currentPlan === "builder" ? 10 : 30;
+
+      if (existingAlerts.length >= limit) {
+        if (currentPlan === "builder") {
+          const upgrade = confirm(
+            "Builder accounts can have up to 10 notified searches. Upgrade to Collector for up to 30?"
+          );
+
+          if (upgrade) {
+            window.location.href = "/pricing.html";
+          }
+        } else {
+          message.innerText = "Collector accounts can have up to 30 notified searches.";
+        }
+
+        return;
+      }
+
+      const { data: duplicate, error: duplicateError } = await supabaseClient
+        .from("notified_searches")
+        .select("id")
+        .eq("user_id", currentUser.id)
+        .eq("query", query)
+        .maybeSingle();
+
+      if (duplicateError) {
+        message.innerText = "Could not check for duplicate alert.";
+        return;
+      }
+
+      if (duplicate) {
+        message.innerText = "You already created an alert for this search.";
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from("notified_searches")
+        .insert([
+          {
+            user_id: currentUser.id,
+            query: query,
+            is_active: true
+          }
+        ]);
+
+      if (error) {
+        message.innerText = error.message;
+        return;
+      }
+
+      document.getElementById("alert-query").value = "";
+      message.innerText = "Notified search created.";
+      await loadAlerts();
     }
 
     function runSearch(query) {
@@ -252,6 +412,7 @@
         .replace(/\n/g, " ");
     }
 
+    loadAccountBar();
     loadPage();
   </script>
 </body>
