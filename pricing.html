@@ -9,48 +9,152 @@
       font-family: Arial, sans-serif;
       background: #ede8d0;
       color: #222;
-      max-width: 900px;
+      max-width: 1100px;
       margin: 0 auto;
       padding: 60px 20px;
       line-height: 1.6;
       text-align: center;
+      position: relative;
+    }
+
+    .account-bar {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+
+    .account-bar a,
+    .account-bar button {
+      margin-left: 10px;
+      background: none;
+      border: none;
+      color: #a42a0e;
+      font-size: 15px;
+      text-decoration: none;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .account-bar a:hover,
+    .account-bar button:hover {
+      color: #c43c1d;
     }
 
     h1 {
       margin-bottom: 10px;
+      font-size: 44px;
     }
 
-    p {
+    .subtitle {
       color: #555;
+      max-width: 700px;
+      margin: 0 auto 40px auto;
     }
 
     .pricing-wrap {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
       margin-top: 40px;
     }
 
     .plan {
       background: #1b1b1b;
       color: white;
-      border-radius: 14px;
-      padding: 24px;
+      border-radius: 16px;
+      padding: 28px;
       text-align: left;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
     }
 
     .plan h2 {
       margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 28px;
+    }
+
+    .plan .tag {
+      display: inline-block;
+      background: #2a2a2a;
+      color: #ddd;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      margin-bottom: 18px;
     }
 
     .price {
-      font-size: 28px;
+      font-size: 34px;
       font-weight: bold;
-      margin: 12px 0 20px 0;
+      margin: 10px 0 4px 0;
     }
 
-    .muted {
+    .per {
       color: #aaa;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .plan ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 28px 0;
+    }
+
+    .plan li {
+      margin-bottom: 12px;
+      color: #ddd;
+    }
+
+    .plan strong {
+      color: white;
+    }
+
+    .btn {
+      display: inline-block;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: center;
+      padding: 14px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 16px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: #a42a0e;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #c43c1d;
+    }
+
+    .btn-secondary {
+      background: #2a2a2a;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #3a3a3a;
+    }
+
+    .note {
+      margin-top: 40px;
+      color: #666;
+      font-size: 14px;
+    }
+
+    a {
+      color: #a42a0e;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: #c43c1d;
     }
 
     footer {
@@ -65,27 +169,72 @@
       text-decoration: none;
       margin: 0 10px;
     }
+
+    footer a:hover {
+      color: #c43c1d;
+    }
   </style>
 </head>
 <body>
+  <div class="account-bar" id="account-bar"></div>
+
   <h1>Pricing</h1>
-  <p>Simple plans for enthusiasts searching for rare car parts.</p>
+  <p class="subtitle">
+    Find rare JDM and enthusiast car parts faster, save the listings you care about, and get notified when the parts you want are newly listed.
+  </p>
 
   <div class="pricing-wrap">
     <div class="plan">
+      <div class="tag">For casual browsing</div>
       <h2>Free</h2>
       <div class="price">$0</div>
-      <p class="muted">Basic marketplace search</p>
-      <p>Search public sources like eBay and web listings.</p>
+      <div class="per">No monthly cost</div>
+
+      <ul>
+        <li><strong>Marketplace access:</strong> eBay, Amazon, Yahoo Auctions and other affiliate-friendly sources</li>
+        <li><strong>Saved listings:</strong> Up to 5 at one time</li>
+        <li><strong>Notified searches:</strong> None</li>
+      </ul>
+
+      <a class="btn btn-secondary" href="/signup.html">Create Free Account</a>
     </div>
 
     <div class="plan">
-      <h2>Premium</h2>
-      <div class="price">Coming Soon</div>
-      <p class="muted">More sources and advanced tools</p>
-      <p>Planned features include saved searches, alerts, and premium marketplace access.</p>
+      <div class="tag">Most popular</div>
+      <h2>Builder</h2>
+      <div class="price">$10 NZD</div>
+      <div class="per">per month</div>
+
+      <ul>
+        <li><strong>Marketplace access:</strong> everything in Free</li>
+        <li><strong>Saved listings:</strong> Unlimited</li>
+        <li><strong>Notified searches:</strong> Up to 10</li>
+        <li><strong>Best for:</strong> active builds and part hunting</li>
+      </ul>
+
+      <a class="btn btn-primary" href="/signup.html">Get Builder</a>
+    </div>
+
+    <div class="plan">
+      <div class="tag">For serious collectors</div>
+      <h2>Collector</h2>
+      <div class="price">$20 NZD</div>
+      <div class="per">per month</div>
+
+      <ul>
+        <li><strong>Marketplace access:</strong> everything in Builder</li>
+        <li><strong>Saved listings:</strong> Unlimited</li>
+        <li><strong>Notified searches:</strong> Up to 30</li>
+        <li><strong>Best for:</strong> restorations, rare parts and constant monitoring</li>
+      </ul>
+
+      <a class="btn btn-primary" href="/signup.html">Get Collector</a>
     </div>
   </div>
+
+  <p class="note">
+    Billing and premium activation are coming next. For now, create an account and start using Stray Parts.
+  </p>
 
   <footer>
     <p style="color:#666;font-size:14px;margin-bottom:14px;">
@@ -102,5 +251,39 @@
 
     <p style="color:#888;font-size:13px;margin:0;">© Stray Parts</p>
   </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://gapajajlaerwfuqrdboz.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGFqYWpsYWVyd2Z1cXJkYm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMjI5ODIsImV4cCI6MjA4ODU5ODk4Mn0.sQ_WUObhZLHIPpEvO7lUjysHw58hNn_Pw6c4dft9hi8";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function loadAccountBar() {
+      const accountBar = document.getElementById("account-bar");
+      if (!accountBar) return;
+
+      const { data: authData } = await supabaseClient.auth.getUser();
+      const user = authData.user;
+
+      if (user) {
+        accountBar.innerHTML = `
+          <a href="/saved.html">Saved Listings</a>
+          <button onclick="logOut()">Log Out</button>
+        `;
+      } else {
+        accountBar.innerHTML = `
+          <a href="/login.html">Log In</a>
+          <a href="/signup.html">Sign Up</a>
+        `;
+      }
+    }
+
+    async function logOut() {
+      await supabaseClient.auth.signOut();
+      window.location.href = "/";
+    }
+
+    loadAccountBar();
+  </script>
 </body>
 </html>
