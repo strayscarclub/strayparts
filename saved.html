@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Saved Searches - Stray Parts</title>
+  <title>Saved Listings - Stray Parts</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -15,7 +15,7 @@
     }
 
     .wrap {
-      max-width: 900px;
+      max-width: 1000px;
       margin: 0 auto;
     }
 
@@ -46,6 +46,15 @@
       background: #c43c1d;
     }
 
+    .secondary-btn {
+      background: #2a2a2a;
+      color: white;
+    }
+
+    .secondary-btn:hover {
+      background: #3a3a3a;
+    }
+
     .card {
       background: #1b1b1b;
       color: white;
@@ -53,23 +62,69 @@
       padding: 18px;
       margin: 14px 0;
       text-align: left;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
     }
 
-    .muted {
+    .thumb {
+      width: 120px;
+      height: 120px;
+      border-radius: 10px;
+      background: #2a2a2a;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .content {
+      flex: 1;
+    }
+
+    .title {
+      font-size: 19px;
+      font-weight: bold;
+      margin: 0 0 10px 0;
+      line-height: 1.4;
+      color: white;
+    }
+
+    .price {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: white;
+    }
+
+    .meta {
       color: #aaa;
       font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .actions {
+      margin-top: 14px;
     }
 
     a {
       color: #a42a0e;
       text-decoration: none;
+      font-weight: bold;
+    }
+
+    a:hover {
+      color: #c43c1d;
+    }
+
+    .message {
+      margin-top: 16px;
+      color: #555;
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Saved Searches</h1>
-    <p>Your saved searches live here.</p>
+    <h1>Saved Listings</h1>
+    <p>Your saved parts listings live here.</p>
 
     <div class="topbar">
       <a href="/search.html">Back to Search</a>
@@ -77,7 +132,8 @@
     </div>
 
     <div id="account"></div>
-    <div id="saved-searches"></div>
+    <div id="message" class="message"></div>
+    <div id="saved-listings"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -85,6 +141,9 @@
     const SUPABASE_URL = "https://gapajajlaerwfuqrdboz.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGFqYWpsYWVyd2Z1cXJkYm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMjI5ODIsImV4cCI6MjA4ODU5ODk4Mn0.sQ_WUObhZLHIPpEvO7lUjysHw58hNn_Pw6c4dft9hi8";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentUser = null;
+    let currentPlan = "free";
 
     async function loadPage() {
       const { data: authData } = await supabaseClient.auth.getUser();
@@ -95,56 +154,127 @@
         return;
       }
 
-      const accountDiv = document.getElementById("account");
-      const searchesDiv = document.getElementById("saved-searches");
+      currentUser = user;
 
-      const { data: profile } = await supabaseClient
+      const accountDiv = document.getElementById("account");
+
+      const { data: profile, error: profileError } = await supabaseClient
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .single();
 
-      if (profile) {
+      if (profileError) {
         accountDiv.innerHTML = `
           <div class="card">
-            <h3>${profile.email}</h3>
-            <p class="muted">Plan: ${profile.plan}</p>
+            <div class="content">
+              <div class="title">Could not load account profile</div>
+            </div>
+          </div>
+        `;
+      } else if (profile) {
+        currentPlan = profile.plan || "free";
+
+        accountDiv.innerHTML = `
+          <div class="card">
+            <div class="content">
+              <div class="title">${profile.email}</div>
+              <div class="meta">Plan: ${currentPlan}</div>
+              <div class="meta">
+                ${currentPlan === "free"
+                  ? "Free plan: max 5 saved listings"
+                  : "Paid plan: unlimited saved listings"}
+              </div>
+            </div>
           </div>
         `;
       }
 
-      const { data: searches, error } = await supabaseClient
-        .from("saved_searches")
+      await loadSavedListings();
+    }
+
+    async function loadSavedListings() {
+      const listingsDiv = document.getElementById("saved-listings");
+
+      const { data: listings, error } = await supabaseClient
+        .from("saved_listings")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", currentUser.id)
         .order("created_at", { ascending: false });
 
       if (error) {
-        searchesDiv.innerHTML = `<p>Could not load saved searches.</p>`;
+        listingsDiv.innerHTML = `<p>Could not load saved listings.</p>`;
         return;
       }
 
-      if (!searches || searches.length === 0) {
-        searchesDiv.innerHTML = `
+      if (!listings || listings.length === 0) {
+        listingsDiv.innerHTML = `
           <div class="card">
-            <h3>No saved searches yet</h3>
-            <p class="muted">Go to the search page and save one.</p>
+            <div class="content">
+              <div class="title">No saved listings yet</div>
+              <p class="meta">Go to the search page and save a listing.</p>
+            </div>
           </div>
         `;
         return;
       }
 
-      searchesDiv.innerHTML = searches.map(search => `
+      listingsDiv.innerHTML = listings.map(listing => `
         <div class="card">
-          <h3>${search.query}</h3>
-          <p class="muted">Alerts enabled: ${search.alerts_enabled ? "Yes" : "No"}</p>
+          ${
+            listing.image_url
+              ? `<img class="thumb" src="${escapeHtml(listing.image_url)}" alt="${escapeHtml(listing.title)}">`
+              : `<div class="thumb"></div>`
+          }
+
+          <div class="content">
+            <div class="title">${escapeHtml(listing.title || "Untitled listing")}</div>
+            <div class="price">${escapeHtml(listing.price || "Price not available")}</div>
+            <div class="meta">Marketplace: ${escapeHtml(listing.marketplace || "Unknown")}</div>
+
+            <div class="actions">
+              <a href="${escapeHtml(listing.item_url || "#")}" target="_blank" rel="noopener noreferrer">View Listing</a>
+              <button class="secondary-btn" onclick="deleteListing('${listing.id}')">Delete</button>
+            </div>
+          </div>
         </div>
       `).join("");
+    }
+
+    async function deleteListing(listingId) {
+      const message = document.getElementById("message");
+      message.innerText = "";
+
+      const confirmed = confirm("Delete this saved listing?");
+      if (!confirmed) return;
+
+      const { error } = await supabaseClient
+        .from("saved_listings")
+        .delete()
+        .eq("id", listingId)
+        .eq("user_id", currentUser.id);
+
+      if (error) {
+        message.innerText = "Could not delete saved listing.";
+        return;
+      }
+
+      message.innerText = "Saved listing deleted.";
+      await loadSavedListings();
     }
 
     async function logOut() {
       await supabaseClient.auth.signOut();
       window.location.href = "/";
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
     }
 
     loadPage();
