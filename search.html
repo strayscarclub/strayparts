@@ -186,6 +186,14 @@
 .account-bar button:hover {
   color: #c43c1d;
 }
+    .secondary-btn {
+  background: #2a2a2a;
+  color: white;
+}
+
+.secondary-btn:hover {
+  background: #3a3a3a;
+}
   </style>
 </head>
 <body>
@@ -270,12 +278,14 @@
                 <a href="${escapeHtml(affiliateLink)}" target="_blank" rel="noopener noreferrer">View on eBay</a>
                 <br><br>
                 <button onclick="saveListing(
-                  '${escapeJs(title)}',
-                  '${escapeJs(affiliateLink)}',
-                  '${escapeJs(image)}',
-                  '${escapeJs(price)}',
-                  'eBay'
-                )">Save Listing</button>
+  '${escapeJs(title)}',
+  '${escapeJs(affiliateLink)}',
+  '${escapeJs(image)}',
+  '${escapeJs(price)}',
+  'eBay'
+)">Save Listing</button>
+
+<button class="secondary-btn" onclick="createAlertFromCurrentSearch()">Create Alert</button>
               </div>
             </div>
           `;
@@ -442,6 +452,109 @@
     document.getElementById("query").value = q;
     searchParts();
   }
+   async function createAlertFromCurrentSearch() {
+  const query = document.getElementById("query").value.trim();
+
+  if (!query) {
+    alert("Search for something first.");
+    return;
+  }
+
+  const { data: authData } = await supabaseClient.auth.getUser();
+  const user = authData.user;
+
+  if (!user) {
+    window.location.href = "/login.html";
+    return;
+  }
+
+  const { data: profile, error: profileError } = await supabaseClient
+    .from("profiles")
+    .select("plan")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !profile) {
+    alert("Could not load your account plan.");
+    return;
+  }
+
+  const plan = profile.plan || "free";
+
+  if (plan === "free") {
+    const upgrade = confirm(
+      "Notified searches are available on paid plans only. Upgrade now?"
+    );
+
+    if (upgrade) {
+      window.location.href = "/pricing.html";
+    }
+
+    return;
+  }
+
+  const { data: existingAlerts, error: countError } = await supabaseClient
+    .from("notified_searches")
+    .select("id")
+    .eq("user_id", user.id);
+
+  if (countError) {
+    alert("Could not check your notified searches.");
+    return;
+  }
+
+  const limit = plan === "builder" ? 10 : 30;
+
+  if (existingAlerts.length >= limit) {
+    if (plan === "builder") {
+      const upgrade = confirm(
+        "Builder accounts can have up to 10 notified searches. Upgrade to Collector for up to 30?"
+      );
+
+      if (upgrade) {
+        window.location.href = "/pricing.html";
+      }
+    } else {
+      alert("Collector accounts can have up to 30 notified searches.");
+    }
+
+    return;
+  }
+
+  const { data: duplicate, error: duplicateError } = await supabaseClient
+    .from("notified_searches")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("query", query)
+    .maybeSingle();
+
+  if (duplicateError) {
+    alert("Could not check for duplicate alert.");
+    return;
+  }
+
+  if (duplicate) {
+    alert("You already created an alert for this search.");
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("notified_searches")
+    .insert([
+      {
+        user_id: user.id,
+        query: query,
+        is_active: true
+      }
+    ]);
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  alert("Notified search created.");
+}
 </script>
   <script>
   async function loadAccountBar() {
