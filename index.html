@@ -10,21 +10,9 @@
       text-align: center;
       background: #ede8d0;
       color: #222;
-      padding-top: 140px;
+      padding-top: 80px;
       position: relative;
       margin: 0;
-    }
-
-    .logo-wrap {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-    }
-
-    .logo-wrap img {
-      height: 72px;
-      width: auto;
-      display: block;
     }
 
     .account-bar {
@@ -50,13 +38,21 @@
       color: #c43c1d;
     }
 
-    h1 {
-      font-size: 60px;
-      margin-bottom: 10px;
+    .hero-logo {
+      margin: 0 auto 10px auto;
+      text-align: center;
+    }
+
+    .hero-logo img {
+      width: min(900px, 88vw);
+      height: auto;
+      display: block;
+      margin: 0 auto;
     }
 
     p {
       color: #555;
+      margin-top: 10px;
     }
 
     input {
@@ -95,15 +91,13 @@
 </head>
 <body>
 
-  <div class="logo-wrap">
+  <div class="account-bar" id="account-bar"></div>
+
+  <div class="hero-logo">
     <a href="/">
       <img src="/strayparts-logo.png" alt="Stray Parts logo">
     </a>
   </div>
-
-  <div class="account-bar" id="account-bar"></div>
-
-  <h1>Stray Parts</h1>
 
   <p>Find rare car parts across the internet</p>
 
