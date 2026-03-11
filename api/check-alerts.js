@@ -27,64 +27,55 @@ module.exports = async function handler(req, res) {
     const processed = [];
 
     for (const alert of alerts) {
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("id, email, plan")
-        .eq("id", alert.user_id)
-        .single();
+     const ebayResults = await searchEbay(alert.query, ebayToken);
+const itemSummaries = ebayResults.itemSummaries || [];
+const newItems = [];
 
-      if (profileError || !profile) continue;
-      if (profile.plan !== "builder" && profile.plan !== "collector") continue;
+for (const item of itemSummaries) {
+  const externalItemId = item.itemId || item.legacyItemId || item.itemWebUrl;
+  if (!externalItemId) continue;
 
-      const ebayResults = await searchEbay(alert.query, ebayToken);
-      const itemSummaries = ebayResults.itemSummaries || [];
-      const newItems = [];
+  const { data: existingSeen } = await supabase
+    .from("seen_alert_items")
+    .select("id")
+    .eq("notified_search_id", alert.id)
+    .eq("external_item_id", externalItemId)
+    .maybeSingle();
 
-      for (const item of itemSummaries) {
-        const externalItemId = item.itemId || item.legacyItemId || item.itemWebUrl;
-        if (!externalItemId) continue;
+  if (existingSeen) continue;
 
-        const { data: existingSeen } = await supabase
-          .from("seen_alert_items")
-          .select("id")
-          .eq("notified_search_id", alert.id)
-          .eq("external_item_id", externalItemId)
-          .maybeSingle();
+  newItems.push({
+    title: item.title || "Untitled listing",
+    itemId: externalItemId,
+    itemWebUrl: addAffiliateParams(item.itemWebUrl || ""),
+    imageUrl: item.image?.imageUrl || "",
+    price: item.price ? `${item.price.value} ${item.price.currency}` : "Price not available"
+  });
+}
 
-        if (existingSeen) continue;
+if (newItems.length > 0) {
+  await sendAlertEmail(profile.email, alert.query, newItems);
 
-        const { error: insertSeenError } = await supabase
-          .from("seen_alert_items")
-          .insert([
-            {
-              notified_search_id: alert.id,
-              external_item_id: externalItemId
-            }
-          ]);
-
-        if (!insertSeenError) {
-          newItems.push({
-            title: item.title || "Untitled listing",
-            itemId: externalItemId,
-            itemWebUrl: addAffiliateParams(item.itemWebUrl || ""),
-            imageUrl: item.image?.imageUrl || "",
-            price: item.price ? `${item.price.value} ${item.price.currency}` : "Price not available"
-          });
+  for (const item of newItems) {
+    await supabase
+      .from("seen_alert_items")
+      .insert([
+        {
+          notified_search_id: alert.id,
+          external_item_id: item.itemId
         }
-      }
-
-      if (newItems.length > 0) {
-        await sendAlertEmail(profile.email, alert.query, newItems);
-      }
+      ]);
+  }
+}
 
       processed.push({
-        alert_id: alert.id,
-        query: alert.query,
-        user_email: profile.email,
-        new_items_found: newItems.length,
-        new_items: newItems
-      });
-    }
+  alert_id: alert.id,
+  query: alert.query,
+  user_email: profile.email,
+  new_items_found: newItems.length,
+  email_attempted: newItems.length > 0,
+  new_items: newItems
+});
 
     return res.status(200).json({
       success: true,
