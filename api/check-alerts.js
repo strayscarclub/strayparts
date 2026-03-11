@@ -1,6 +1,12 @@
 const { createClient } = require("@supabase/supabase-js");
 
 module.exports = async function handler(req, res) {
+  const authHeader = req.headers.authorization;
+
+  if (authHeader !== `Bearer ${process.env.ALERT_CRON_SECRET}`) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
   try {
     const supabase = createClient(
       process.env.SUPABASE_URL,
@@ -181,7 +187,7 @@ async function sendAlertEmail(toEmail, query, items) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      from: "delivered@resend.dev",
+      from: "PASTE_YOUR_TEMP_OR_VERIFIED_SENDER_HERE",
       to: toEmail,
       subject,
       html
