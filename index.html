@@ -10,9 +10,21 @@
       text-align: center;
       background: #ede8d0;
       color: #222;
-      padding-top: 120px;
+      padding-top: 140px;
       position: relative;
       margin: 0;
+    }
+
+    .logo-wrap {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+    }
+
+    .logo-wrap img {
+      height: 72px;
+      width: auto;
+      display: block;
     }
 
     .account-bar {
@@ -83,6 +95,12 @@
 </head>
 <body>
 
+  <div class="logo-wrap">
+    <a href="/">
+      <img src="/strayparts-logo.png" alt="Stray Parts logo">
+    </a>
+  </div>
+
   <div class="account-bar" id="account-bar"></div>
 
   <h1>Stray Parts</h1>
@@ -134,6 +152,7 @@
       if (user) {
         accountBar.innerHTML = `
           <a href="/saved.html">Saved Listings</a>
+          <a href="/alerts.html">Alerts</a>
           <button onclick="logOut()">Log Out</button>
         `;
       } else {
