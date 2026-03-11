@@ -187,7 +187,7 @@ async function sendAlertEmail(toEmail, query, items) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      from: "PASTE_YOUR_TEMP_OR_VERIFIED_SENDER_HERE",
+      from: "delivered@resend.dev",
       to: toEmail,
       subject,
       html
