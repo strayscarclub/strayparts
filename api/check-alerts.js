@@ -27,55 +27,114 @@ module.exports = async function handler(req, res) {
     const processed = [];
 
     for (const alert of alerts) {
-     const ebayResults = await searchEbay(alert.query, ebayToken);
-const itemSummaries = ebayResults.itemSummaries || [];
-const newItems = [];
+      const alertDebug = {
+        alert_id: alert.id,
+        query: alert.query,
+        user_id: alert.user_id,
+        user_email: null,
+        plan: null,
+        ebay_results_count: 0,
+        unseen_items_count: 0,
+        email_attempted: false,
+        email_sent: false,
+        email_error: null,
+        seen_items_inserted: 0,
+        skipped_reason: null,
+        new_items: []
+      };
 
-for (const item of itemSummaries) {
-  const externalItemId = item.itemId || item.legacyItemId || item.itemWebUrl;
-  if (!externalItemId) continue;
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, email, plan")
+        .eq("id", alert.user_id)
+        .single();
 
-  const { data: existingSeen } = await supabase
-    .from("seen_alert_items")
-    .select("id")
-    .eq("notified_search_id", alert.id)
-    .eq("external_item_id", externalItemId)
-    .maybeSingle();
+      if (profileError || !profile) {
+        alertDebug.skipped_reason = "profile_not_found";
+        processed.push(alertDebug);
+        continue;
+      }
 
-  if (existingSeen) continue;
+      alertDebug.user_email = profile.email;
+      alertDebug.plan = profile.plan;
 
-  newItems.push({
-    title: item.title || "Untitled listing",
-    itemId: externalItemId,
-    itemWebUrl: addAffiliateParams(item.itemWebUrl || ""),
-    imageUrl: item.image?.imageUrl || "",
-    price: item.price ? `${item.price.value} ${item.price.currency}` : "Price not available"
-  });
-}
+      if (profile.plan !== "builder" && profile.plan !== "collector") {
+        alertDebug.skipped_reason = "user_not_on_paid_plan";
+        processed.push(alertDebug);
+        continue;
+      }
 
-if (newItems.length > 0) {
-  await sendAlertEmail(profile.email, alert.query, newItems);
+      const ebayResults = await searchEbay(alert.query, ebayToken);
+      const itemSummaries = ebayResults.itemSummaries || [];
+      alertDebug.ebay_results_count = itemSummaries.length;
 
-  for (const item of newItems) {
-    await supabase
-      .from("seen_alert_items")
-      .insert([
-        {
-          notified_search_id: alert.id,
-          external_item_id: item.itemId
+      const newItems = [];
+
+      for (const item of itemSummaries) {
+        const externalItemId = item.itemId || item.legacyItemId || item.itemWebUrl;
+        if (!externalItemId) continue;
+
+        const { data: existingSeen, error: seenCheckError } = await supabase
+          .from("seen_alert_items")
+          .select("id")
+          .eq("notified_search_id", alert.id)
+          .eq("external_item_id", externalItemId)
+          .maybeSingle();
+
+        if (seenCheckError) {
+          continue;
         }
-      ]);
-  }
-}
 
-      processed.push({
-  alert_id: alert.id,
-  query: alert.query,
-  user_email: profile.email,
-  new_items_found: newItems.length,
-  email_attempted: newItems.length > 0,
-  new_items: newItems
-});
+        if (existingSeen) {
+          continue;
+        }
+
+        newItems.push({
+          title: item.title || "Untitled listing",
+          itemId: externalItemId,
+          itemWebUrl: addAffiliateParams(item.itemWebUrl || ""),
+          imageUrl: item.image?.imageUrl || "",
+          price: item.price ? `${item.price.value} ${item.price.currency}` : "Price not available"
+        });
+      }
+
+      alertDebug.unseen_items_count = newItems.length;
+      alertDebug.new_items = newItems;
+
+      if (newItems.length === 0) {
+        alertDebug.skipped_reason = "no_new_items";
+        processed.push(alertDebug);
+        continue;
+      }
+
+      alertDebug.email_attempted = true;
+
+      try {
+        await sendAlertEmail(profile.email, alert.query, newItems);
+        alertDebug.email_sent = true;
+      } catch (emailError) {
+        alertDebug.email_error = String(emailError);
+        processed.push(alertDebug);
+        continue;
+      }
+
+      for (const item of newItems) {
+        const { error: insertSeenError } = await supabase
+          .from("seen_alert_items")
+          .insert([
+            {
+              notified_search_id: alert.id,
+              external_item_id: item.itemId
+            }
+          ]);
+
+        if (!insertSeenError) {
+          alertDebug.seen_items_inserted += 1;
+        }
+      }
+
+      processed.push(alertDebug);
+    }
 
     return res.status(200).json({
       success: true,
@@ -178,7 +237,7 @@ async function sendAlertEmail(toEmail, query, items) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      from: "delivered@resend.dev",
+      from: "PASTE_YOUR_TEMP_OR_VERIFIED_SENDER_HERE",
       to: toEmail,
       subject,
       html
