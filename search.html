@@ -15,6 +15,18 @@
       position: relative;
     }
 
+    .logo-wrap {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+    }
+
+    .logo-wrap img {
+      height: 72px;
+      width: auto;
+      display: block;
+    }
+
     .account-bar {
       position: absolute;
       top: 20px;
@@ -40,6 +52,7 @@
 
     h1 {
       margin-bottom: 10px;
+      margin-top: 30px;
     }
 
     p {
@@ -87,7 +100,7 @@
 
     .results {
       margin-top: 40px;
-      max-width: 900px;
+      max-width: 1000px;
       margin-left: auto;
       margin-right: auto;
     }
@@ -191,9 +204,15 @@
   </style>
 </head>
 <body>
+  <div class="logo-wrap">
+    <a href="/">
+      <img src="/strayparts-logo.png" alt="Stray Parts logo">
+    </a>
+  </div>
+
   <div class="account-bar" id="account-bar"></div>
 
-  <h1>Stray Parts Search</h1>
+  <h1>Search Parts</h1>
   <p>Search multiple marketplaces for rare car parts</p>
 
   <div class="search-wrap">
@@ -229,20 +248,33 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGFqYWpsYWVyd2Z1cXJkYm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMjI5ODIsImV4cCI6MjA4ODU5ODk4Mn0.sQ_WUObhZLHIPpEvO7lUjysHw58hNn_Pw6c4dft9hi8";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    let currentUser = null;
+    let currentPlan = "free";
+
     async function loadAccountBar() {
       const accountBar = document.getElementById("account-bar");
       if (!accountBar) return;
 
       const { data: authData } = await supabaseClient.auth.getUser();
       const user = authData.user;
+      currentUser = user || null;
 
       if (user) {
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("plan")
+          .eq("id", user.id)
+          .single();
+
+        currentPlan = profile?.plan || "free";
+
         accountBar.innerHTML = `
           <a href="/saved.html">Saved Listings</a>
           <a href="/alerts.html">Alerts</a>
           <button onclick="logOut()">Log Out</button>
         `;
       } else {
+        currentPlan = "free";
         accountBar.innerHTML = `
           <a href="/login.html">Log In</a>
           <a href="/signup.html">Sign Up</a>
@@ -277,20 +309,25 @@
       results.innerHTML = `
         <div class="card">
           <div class="content">
-            <div class="title">Searching eBay...</div>
+            <div class="title">Searching...</div>
             <p class="muted">Looking for <strong>${escapeHtml(query)}</strong></p>
           </div>
         </div>
       `;
 
+      await loadAccountBar();
+
+      const sections = [];
+
+      // eBay
       try {
-        const res = await fetch("/api/ebay?q=" + encodedQuery);
-        const data = await res.json();
+        const ebayRes = await fetch("/api/ebay?q=" + encodedQuery);
+        const ebayData = await ebayRes.json();
 
-        let html = `<div class="section-title">eBay Results</div>`;
+        let ebayHtml = `<div class="section-title">eBay Results</div>`;
 
-        if (data.itemSummaries && data.itemSummaries.length > 0) {
-          data.itemSummaries.forEach((item) => {
+        if (ebayData.itemSummaries && ebayData.itemSummaries.length > 0) {
+          ebayData.itemSummaries.forEach((item) => {
             const title = item.title || "Untitled listing";
             const rawLink = item.itemWebUrl || "#";
             const affiliateLink =
@@ -306,7 +343,7 @@
               ? item.image.imageUrl
               : "";
 
-            html += `
+            ebayHtml += `
               <div class="card">
                 ${
                   image
@@ -331,7 +368,7 @@
             `;
           });
         } else {
-          html += `
+          ebayHtml += `
             <div class="card">
               <div class="content">
                 <div class="title">No eBay results found</div>
@@ -343,47 +380,122 @@
           `;
         }
 
-        html += `
-          <div class="section-title">Other Sources</div>
-
-          <div class="source-grid">
-            <div class="source-card">
-              <h3>Facebook Marketplace</h3>
-              <p class="muted">Search Marketplace for <strong>${escapeHtml(query)}</strong></p>
-              <a href="https://www.facebook.com/marketplace/search/?query=${encodedQuery}" target="_blank" rel="noopener noreferrer">
-                Search Facebook Marketplace
-              </a>
-            </div>
-
-            <div class="source-card">
-              <h3>Yahoo Auctions Japan</h3>
-              <p class="muted">Search Yahoo Auctions Japan for <strong>${escapeHtml(query)}</strong></p>
-              <a href="https://auctions.yahoo.co.jp/search/search?p=${encodedQuery}" target="_blank" rel="noopener noreferrer">
-                Search Yahoo Auctions Japan
-              </a>
-            </div>
-
-            <div class="source-card">
-              <h3>Forums & Web Listings</h3>
-              <p class="muted">Search forums and listings related to <strong>${escapeHtml(query)}</strong></p>
-              <a href="https://www.google.com/search?q=${encodedQuery}+car+parts" target="_blank" rel="noopener noreferrer">
-                Search forums & listings
-              </a>
-            </div>
-          </div>
-        `;
-
-        results.innerHTML = html;
+        sections.push(ebayHtml);
       } catch (error) {
-        results.innerHTML = `
+        sections.push(`
+          <div class="section-title">eBay Results</div>
           <div class="card">
             <div class="content">
-              <div class="title">Could not load results</div>
-              <p class="muted">Please try again.</p>
+              <div class="title">Could not load eBay results</div>
             </div>
           </div>
-        `;
+        `);
       }
+
+      // Up Garage for paid users only
+      if (currentPlan === "builder" || currentPlan === "collector") {
+        try {
+          const upgarageRes = await fetch("/api/upgarage?q=" + encodedQuery);
+          const upgarageData = await upgarageRes.json();
+
+          let upgarageHtml = `<div class="section-title">Up Garage Results</div>`;
+
+          if (upgarageData.items && upgarageData.items.length > 0) {
+            upgarageData.items.forEach((item) => {
+              const title = item.title || "Untitled listing";
+              const itemUrl = item.item_url || "#";
+              const price = item.price || "Price not available";
+              const image = item.image_url || "";
+
+              upgarageHtml += `
+                <div class="card">
+                  ${
+                    image
+                      ? `<img class="thumb" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">`
+                      : `<div class="thumb"></div>`
+                  }
+                  <div class="content">
+                    <div class="title">${escapeHtml(title)}</div>
+                    <div class="price">${escapeHtml(price)}</div>
+                    <div class="meta">Marketplace: Up Garage</div>
+                    <a href="${escapeHtml(itemUrl)}" target="_blank" rel="noopener noreferrer">View on Up Garage</a>
+                    <br><br>
+                    <button onclick="saveListing(
+                      '${escapeJs(title)}',
+                      '${escapeJs(itemUrl)}',
+                      '${escapeJs(image)}',
+                      '${escapeJs(price)}',
+                      'Up Garage'
+                    )">Save Listing</button>
+                  </div>
+                </div>
+              `;
+            });
+          } else {
+            upgarageHtml += `
+              <div class="card">
+                <div class="content">
+                  <div class="title">No Up Garage results found</div>
+                </div>
+              </div>
+            `;
+          }
+
+          sections.push(upgarageHtml);
+        } catch (error) {
+          sections.push(`
+            <div class="section-title">Up Garage Results</div>
+            <div class="card">
+              <div class="content">
+                <div class="title">Could not load Up Garage results</div>
+              </div>
+            </div>
+          `);
+        }
+      } else {
+        sections.push(`
+          <div class="section-title">Up Garage Results</div>
+          <div class="card">
+            <div class="content">
+              <div class="title">Up Garage is available on paid plans</div>
+              <div class="meta">Upgrade for access to premium JDM sources and notified searches.</div>
+              <a href="/pricing.html">View Pricing</a>
+            </div>
+          </div>
+        `);
+      }
+
+      sections.push(`
+        <div class="section-title">Other Sources</div>
+
+        <div class="source-grid">
+          <div class="source-card">
+            <h3>Facebook Marketplace</h3>
+            <p class="muted">Search Marketplace for <strong>${escapeHtml(query)}</strong></p>
+            <a href="https://www.facebook.com/marketplace/search/?query=${encodedQuery}" target="_blank" rel="noopener noreferrer">
+              Search Facebook Marketplace
+            </a>
+          </div>
+
+          <div class="source-card">
+            <h3>Yahoo Auctions Japan</h3>
+            <p class="muted">Search Yahoo Auctions Japan for <strong>${escapeHtml(query)}</strong></p>
+            <a href="https://auctions.yahoo.co.jp/search/search?p=${encodedQuery}" target="_blank" rel="noopener noreferrer">
+              Search Yahoo Auctions Japan
+            </a>
+          </div>
+
+          <div class="source-card">
+            <h3>Forums & Web Listings</h3>
+            <p class="muted">Search forums and listings related to <strong>${escapeHtml(query)}</strong></p>
+            <a href="https://www.google.com/search?q=${encodedQuery}+car+parts" target="_blank" rel="noopener noreferrer">
+              Search forums & listings
+            </a>
+          </div>
+        </div>
+      `);
+
+      results.innerHTML = sections.join("");
     }
 
     async function saveListing(title, itemUrl, imageUrl, price, marketplace) {
@@ -488,12 +600,12 @@
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q");
 
-    if (q) {
-      document.getElementById("query").value = q;
-      searchParts();
-    }
-
-    loadAccountBar();
+    loadAccountBar().then(() => {
+      if (q) {
+        document.getElementById("query").value = q;
+        searchParts();
+      }
+    });
   </script>
 </body>
 </html>
