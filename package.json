@@ -2,6 +2,7 @@
   "name": "strayparts",
   "version": "1.0.0",
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.8"
+    "@supabase/supabase-js": "^2.49.8",
+    "cheerio": "^1.0.0"
   }
 }
