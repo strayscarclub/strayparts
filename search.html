@@ -63,7 +63,7 @@
       margin-top: 30px;
     }
 
-    input {
+    input[type="text"] {
       width: 360px;
       max-width: 80vw;
       padding: 14px;
@@ -167,16 +167,6 @@
       color: #c43c1d;
     }
 
-    .source-card a {
-      color: #a42a0e;
-      text-decoration: none;
-      font-weight: bold;
-    }
-
-    .source-card a:hover {
-      color: #c43c1d;
-    }
-
     .source-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -197,9 +187,37 @@
       margin-bottom: 10px;
     }
 
+    .source-card a {
+      color: #a42a0e;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .source-card a:hover {
+      color: #c43c1d;
+    }
+
     .muted {
       color: #aaa;
       font-size: 14px;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 14px 0;
+      color: #ddd;
+      font-size: 14px;
+    }
+
+    .checkbox-row input {
+      margin-top: 3px;
+      flex-shrink: 0;
+    }
+
+    .inline-actions {
+      margin-top: 12px;
     }
   </style>
 </head>
@@ -250,6 +268,7 @@
 
     let currentUser = null;
     let currentPlan = "free";
+    let upgarageAcknowledged = false;
 
     async function loadAccountBar() {
       const accountBar = document.getElementById("account-bar");
@@ -262,11 +281,12 @@
       if (user) {
         const { data: profile } = await supabaseClient
           .from("profiles")
-          .select("plan")
+          .select("plan, upgarage_acknowledged")
           .eq("id", user.id)
           .single();
 
         currentPlan = profile?.plan || "free";
+        upgarageAcknowledged = !!profile?.upgarage_acknowledged;
 
         accountBar.innerHTML = `
           <a href="/saved.html">Saved Listings</a>
@@ -275,6 +295,8 @@
         `;
       } else {
         currentPlan = "free";
+        upgarageAcknowledged = false;
+
         accountBar.innerHTML = `
           <a href="/login.html">Log In</a>
           <a href="/signup.html">Sign Up</a>
@@ -392,79 +414,10 @@
         `);
       }
 
-      // Up Garage for paid users only
-      if (currentPlan === "builder" || currentPlan === "collector") {
-        try {
-          const upgarageRes = await fetch("/api/upgarage?q=" + encodedQuery);
-          const upgarageData = await upgarageRes.json();
+      // Up Garage
+      sections.push(buildUpGarageSection(query, encodedQuery));
 
-          let upgarageHtml = `<div class="section-title">Up Garage Results</div>`;
-
-          if (upgarageData.items && upgarageData.items.length > 0) {
-            upgarageData.items.forEach((item) => {
-              const title = item.title || "Untitled listing";
-              const itemUrl = item.item_url || "#";
-              const price = item.price || "Price not available";
-              const image = item.image_url || "";
-
-              upgarageHtml += `
-                <div class="card">
-                  ${
-                    image
-                      ? `<img class="thumb" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">`
-                      : `<div class="thumb"></div>`
-                  }
-                  <div class="content">
-                    <div class="title">${escapeHtml(title)}</div>
-                    <div class="price">${escapeHtml(price)}</div>
-                    <div class="meta">Marketplace: Up Garage</div>
-                    <a href="${escapeHtml(itemUrl)}" target="_blank" rel="noopener noreferrer">View on Up Garage</a>
-                    <br><br>
-                    <button onclick="saveListing(
-                      '${escapeJs(title)}',
-                      '${escapeJs(itemUrl)}',
-                      '${escapeJs(image)}',
-                      '${escapeJs(price)}',
-                      'Up Garage'
-                    )">Save Listing</button>
-                  </div>
-                </div>
-              `;
-            });
-          } else {
-            upgarageHtml += `
-              <div class="card">
-                <div class="content">
-                  <div class="title">No Up Garage results found</div>
-                </div>
-              </div>
-            `;
-          }
-
-          sections.push(upgarageHtml);
-        } catch (error) {
-          sections.push(`
-            <div class="section-title">Up Garage Results</div>
-            <div class="card">
-              <div class="content">
-                <div class="title">Could not load Up Garage results</div>
-              </div>
-            </div>
-          `);
-        }
-      } else {
-        sections.push(`
-          <div class="section-title">Up Garage Results</div>
-          <div class="card">
-            <div class="content">
-              <div class="title">Up Garage is available on paid plans</div>
-              <div class="meta">Upgrade for access to premium JDM sources and notified searches.</div>
-              <a href="/pricing.html">View Pricing</a>
-            </div>
-          </div>
-        `);
-      }
-
+      // Other sources
       sections.push(`
         <div class="section-title">Other Sources</div>
 
@@ -496,6 +449,89 @@
       `);
 
       results.innerHTML = sections.join("");
+    }
+
+    function buildUpGarageSection(query, encodedQuery) {
+      if (currentPlan !== "builder" && currentPlan !== "collector") {
+        return `
+          <div class="section-title">Up Garage</div>
+          <div class="card">
+            <div class="content">
+              <div class="title">Up Garage is available on paid plans</div>
+              <div class="meta">Upgrade for access to premium JDM sources and notified searches.</div>
+              <a href="/pricing.html">View Pricing</a>
+            </div>
+          </div>
+        `;
+      }
+
+      if (!upgarageAcknowledged) {
+        return `
+          <div class="section-title">Up Garage</div>
+          <div class="card">
+            <div class="content">
+              <div class="title">Unlock Up Garage</div>
+              <div class="meta">
+                Up Garage is intended for enthusiasts sourcing parts for personal vehicle use, not resale.
+              </div>
+              <label class="checkbox-row">
+                <input type="checkbox" id="upgarage-agree-checkbox">
+                <span>
+                  I understand and agree to use Up Garage results in that spirit.
+                </span>
+              </label>
+              <div class="inline-actions">
+                <button onclick="acknowledgeUpGarage()">Continue to Up Garage access</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="section-title">Up Garage</div>
+        <div class="card">
+          <div class="content">
+            <div class="title">Search Up Garage</div>
+            <div class="meta">
+              Premium source for used JDM parts from Japan. Opens directly on Up Garage.
+            </div>
+            <a href="https://www.upgarage.com/en/ec/search/?search_word=${encodedQuery}" target="_blank" rel="noopener noreferrer">
+              Search Up Garage for "${escapeHtml(query)}"
+            </a>
+          </div>
+        </div>
+      `;
+    }
+
+    async function acknowledgeUpGarage() {
+      const checkbox = document.getElementById("upgarage-agree-checkbox");
+
+      if (!checkbox || !checkbox.checked) {
+        alert("Please tick the checkbox to continue.");
+        return;
+      }
+
+      const { data: authData } = await supabaseClient.auth.getUser();
+      const user = authData.user;
+
+      if (!user) {
+        window.location.href = "/login.html";
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from("profiles")
+        .update({ upgarage_acknowledged: true })
+        .eq("id", user.id);
+
+      if (error) {
+        alert("Could not save your acknowledgement.");
+        return;
+      }
+
+      upgarageAcknowledged = true;
+      searchParts();
     }
 
     async function saveListing(title, itemUrl, imageUrl, price, marketplace) {
