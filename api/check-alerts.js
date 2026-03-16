@@ -121,7 +121,15 @@ module.exports = async function handler(req, res) {
 
       // Up Garage
       try {
-        const upgarageItems = await searchUpGarage(alert.query);
+        let upgarageItems = await searchUpGarage(alert.query);
+
+        if (!upgarageItems.length) {
+          const fallbackQuery = buildFallbackQuery(alert.query);
+          if (fallbackQuery && fallbackQuery !== alert.query) {
+            upgarageItems = await searchUpGarage(fallbackQuery);
+          }
+        }
+
         for (const item of upgarageItems) {
           const seenId = `upgarage:${item.itemId}`;
           const alreadySeen = await hasSeenItem(supabase, alert.id, seenId);
@@ -448,6 +456,16 @@ async function sendDigestEmail(toEmail, alertGroups) {
   }
 
   return data;
+}
+
+function buildFallbackQuery(query) {
+  const cleaned = String(query || "").trim();
+  if (!cleaned) return "";
+
+  const parts = cleaned.split(/\s+/).filter(Boolean);
+  if (!parts.length) return "";
+
+  return parts[0];
 }
 
 function extractPrice(text) {
