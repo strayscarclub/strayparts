@@ -414,42 +414,36 @@
         `);
       }
 
-      // Up Garage
-      if (currentPlan !== "builder" && currentPlan !== "collector") {
-        sections.push(`
-          <div class="section-title">Up Garage</div>
-          <div class="card">
-            <div class="content">
-              <div class="title">Up Garage is available on paid plans</div>
-              <div class="meta">Upgrade for access to premium JDM sources and notified searches.</div>
-              <a href="/pricing.html">View Pricing</a>
-            </div>
-          </div>
-        `);
-      } else if (!upgarageAcknowledged) {
-        sections.push(`
-          <div class="section-title">Up Garage</div>
-          <div class="card">
-            <div class="content">
-              <div class="title">Unlock Up Garage</div>
-              <div class="meta">
-                Up Garage is intended for enthusiasts sourcing parts for personal vehicle use, not resale. By viewing Up Garage results in Stray Parts, you agree to use this source in that spirit.
-              </div>
-              <label class="checkbox-row">
-                <input type="checkbox" id="upgarage-agree-checkbox">
-                <span>
-                  I understand and agree.
-                </span>
-              </label>
-              <div class="inline-actions">
-                <button onclick="acknowledgeUpGarage()">Continue to Up Garage results</button>
-              </div>
-            </div>
-          </div>
-        `);
-      } else {
-        try {
-          const upgarageRes = await fetch("/api/upgarage?q=" + encodedQuery + "&smart=1");
+     // Up Garage
+if (!upgarageAcknowledged) {
+  sections.push(`
+    <div class="section-title">Up Garage</div>
+    <div class="card">
+      <div class="content">
+        <div class="title">Unlock Up Garage</div>
+        <div class="meta">
+          Up Garage is intended for enthusiasts sourcing parts for personal vehicle use, not resale. By viewing Up Garage results in Stray Parts, you agree to use this source in that spirit.
+        </div>
+        <label class="checkbox-row">
+          <input type="checkbox" id="upgarage-agree-checkbox">
+          <span>
+            I understand and agree.
+          </span>
+        </label>
+        <div class="inline-actions">
+          <button onclick="acknowledgeUpGarage()">Continue to Up Garage results</button>
+        </div>
+      </div>
+    </div>
+  `);
+} else {
+  try {
+    const upgarageUrl =
+      (currentPlan === "builder" || currentPlan === "collector")
+        ? "/api/upgarage?q=" + encodedQuery + "&smart=1"
+        : "/api/upgarage?q=" + encodedQuery;
+
+    const upgarageRes = await fetch(upgarageUrl);
           const upgarageData = await upgarageRes.json();
 
           let upgarageHtml = `<div class="section-title">Up Garage Results</div>`;
