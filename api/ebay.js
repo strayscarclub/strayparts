@@ -27,7 +27,7 @@ export default async function handler(req, res) {
     const tokenData = await tokenRes.json()
 
     const searchRes = await fetch(
-      `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=24`,
+      `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=12`,
       {
         headers:{
           "Authorization":"Bearer " + tokenData.access_token
