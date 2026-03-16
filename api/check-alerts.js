@@ -25,6 +25,7 @@ module.exports = async function handler(req, res) {
     }
 
     const processed = [];
+    const userDigestMap = new Map();
 
     for (const alert of alerts) {
       const alertDebug = {
@@ -81,13 +82,8 @@ module.exports = async function handler(req, res) {
           .eq("external_item_id", externalItemId)
           .maybeSingle();
 
-        if (seenCheckError) {
-          continue;
-        }
-
-        if (existingSeen) {
-          continue;
-        }
+        if (seenCheckError) continue;
+        if (existingSeen) continue;
 
         newItems.push({
           title: item.title || "Untitled listing",
@@ -107,33 +103,56 @@ module.exports = async function handler(req, res) {
         continue;
       }
 
-      alertDebug.email_attempted = true;
-
-      try {
-        await sendAlertEmail(profile.email, alert.query, newItems);
-        alertDebug.email_sent = true;
-      } catch (emailError) {
-        alertDebug.email_error = String(emailError);
-        processed.push(alertDebug);
-        continue;
+      if (!userDigestMap.has(profile.email)) {
+        userDigestMap.set(profile.email, {
+          user_email: profile.email,
+          user_id: profile.id,
+          alerts: []
+        });
       }
 
-      for (const item of newItems) {
-        const { error: insertSeenError } = await supabase
-          .from("seen_alert_items")
-          .insert([
-            {
-              notified_search_id: alert.id,
-              external_item_id: item.itemId
-            }
-          ]);
-
-        if (!insertSeenError) {
-          alertDebug.seen_items_inserted += 1;
-        }
-      }
+      userDigestMap.get(profile.email).alerts.push({
+        alert_id: alert.id,
+        query: alert.query,
+        items: newItems
+      });
 
       processed.push(alertDebug);
+    }
+
+    for (const [, digest] of userDigestMap) {
+      try {
+        await sendDigestEmail(digest.user_email, digest.alerts);
+
+        for (const alertGroup of digest.alerts) {
+          for (const item of alertGroup.items) {
+            await supabase
+              .from("seen_alert_items")
+              .insert([
+                {
+                  notified_search_id: alertGroup.alert_id,
+                  external_item_id: item.itemId
+                }
+              ]);
+          }
+        }
+
+        for (const row of processed) {
+          if (row.user_email === digest.user_email && row.unseen_items_count > 0) {
+            row.email_attempted = true;
+            row.email_sent = true;
+            row.seen_items_inserted = row.unseen_items_count;
+          }
+        }
+      } catch (emailError) {
+        for (const row of processed) {
+          if (row.user_email === digest.user_email && row.unseen_items_count > 0) {
+            row.email_attempted = true;
+            row.email_sent = false;
+            row.email_error = String(emailError);
+          }
+        }
+      }
     }
 
     return res.status(200).json({
@@ -174,7 +193,7 @@ async function getEbayToken() {
 
 async function searchEbay(query, accessToken) {
   const searchRes = await fetch(
-    `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=20`,
+    `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=12`,
     {
       headers: {
         "Authorization": `Bearer ${accessToken}`
@@ -194,38 +213,50 @@ function addAffiliateParams(rawLink) {
   );
 }
 
-async function sendAlertEmail(toEmail, query, items) {
-  const subject =
-    items.length === 1
-      ? `New Stray Parts match for "${query}"`
-      : `${items.length} new Stray Parts matches for "${query}"`;
+async function sendDigestEmail(toEmail, alertGroups) {
+  const totalNewItems = alertGroups.reduce((sum, group) => sum + group.items.length, 0);
 
-  const itemsHtml = items
-    .slice(0, 5)
-    .map(
-      (item) => `
-        <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid #ddd;">
-          ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" style="max-width:140px;border-radius:8px;display:block;margin-bottom:10px;">` : ""}
-          <h3 style="margin:0 0 8px 0;">${escapeHtml(item.title)}</h3>
-          <p style="margin:0 0 8px 0;color:#555;"><strong>Price:</strong> ${escapeHtml(item.price)}</p>
-          <p style="margin:0;">
-            <a href="${item.itemWebUrl}" style="color:#a42a0e;font-weight:bold;">View on eBay</a>
-          </p>
+  const subject =
+    totalNewItems === 1
+      ? `1 new Stray Parts match`
+      : `${totalNewItems} new Stray Parts matches`;
+
+  const groupedHtml = alertGroups
+    .map((group) => {
+      const itemsHtml = group.items
+        .slice(0, 5)
+        .map(
+          (item) => `
+            <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid #ddd;">
+              ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" style="max-width:140px;border-radius:8px;display:block;margin-bottom:10px;">` : ""}
+              <h4 style="margin:0 0 8px 0;">${escapeHtml(item.title)}</h4>
+              <p style="margin:0 0 8px 0;color:#555;"><strong>Price:</strong> ${escapeHtml(item.price)}</p>
+              <p style="margin:0;">
+                <a href="${item.itemWebUrl}" style="color:#a42a0e;font-weight:bold;">View on eBay</a>
+              </p>
+            </div>
+          `
+        )
+        .join("");
+
+      return `
+        <div style="margin-bottom:32px;">
+          <h2 style="color:#222;margin-bottom:10px;">${escapeHtml(group.query)}</h2>
+          ${itemsHtml}
         </div>
-      `
-    )
+      `;
+    })
     .join("");
 
   const html = `
     <div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;padding:20px;">
-      <h1 style="color:#222;">New listing match on Stray Parts</h1>
-      <p style="color:#555;">We found new results for your notified search:</p>
-      <p style="font-size:18px;font-weight:bold;color:#222;">${escapeHtml(query)}</p>
+      <h1 style="color:#222;">New matches on Stray Parts</h1>
+      <p style="color:#555;">We found new listings across your notified searches.</p>
       <div style="margin-top:24px;">
-        ${itemsHtml}
+        ${groupedHtml}
       </div>
       <p style="margin-top:30px;color:#777;font-size:14px;">
-        You’re receiving this email because you created a notified search on Stray Parts.
+        You’re receiving this email because you created notified searches on Stray Parts.
       </p>
     </div>
   `;
