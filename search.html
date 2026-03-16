@@ -415,9 +415,99 @@
       }
 
       // Up Garage
-      sections.push(buildUpGarageSection(query, encodedQuery));
+      if (currentPlan !== "builder" && currentPlan !== "collector") {
+        sections.push(`
+          <div class="section-title">Up Garage</div>
+          <div class="card">
+            <div class="content">
+              <div class="title">Up Garage is available on paid plans</div>
+              <div class="meta">Upgrade for access to premium JDM sources and notified searches.</div>
+              <a href="/pricing.html">View Pricing</a>
+            </div>
+          </div>
+        `);
+      } else if (!upgarageAcknowledged) {
+        sections.push(`
+          <div class="section-title">Up Garage</div>
+          <div class="card">
+            <div class="content">
+              <div class="title">Unlock Up Garage</div>
+              <div class="meta">
+                Up Garage is intended for enthusiasts sourcing parts for personal vehicle use, not resale.
+              </div>
+              <label class="checkbox-row">
+                <input type="checkbox" id="upgarage-agree-checkbox">
+                <span>
+                  I understand and agree to use Up Garage results in that spirit.
+                </span>
+              </label>
+              <div class="inline-actions">
+                <button onclick="acknowledgeUpGarage()">Continue to Up Garage results</button>
+              </div>
+            </div>
+          </div>
+        `);
+      } else {
+        try {
+          const upgarageRes = await fetch("/api/upgarage?q=" + encodedQuery);
+          const upgarageData = await upgarageRes.json();
 
-      // Other sources
+          let upgarageHtml = `<div class="section-title">Up Garage Results</div>`;
+
+          if (upgarageData.items && upgarageData.items.length > 0) {
+            upgarageData.items.forEach((item) => {
+              const title = item.title || "Untitled listing";
+              const itemUrl = item.item_url || "#";
+              const price = item.price || "Price not available";
+              const image = item.image_url || "";
+
+              upgarageHtml += `
+                <div class="card">
+                  ${
+                    image
+                      ? `<img class="thumb" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">`
+                      : `<div class="thumb"></div>`
+                  }
+                  <div class="content">
+                    <div class="title">${escapeHtml(title)}</div>
+                    <div class="price">${escapeHtml(price)}</div>
+                    <div class="meta">Marketplace: Up Garage</div>
+                    <a href="${escapeHtml(itemUrl)}" target="_blank" rel="noopener noreferrer">View on Up Garage</a>
+                    <br><br>
+                    <button onclick="saveListing(
+                      '${escapeJs(title)}',
+                      '${escapeJs(itemUrl)}',
+                      '${escapeJs(image)}',
+                      '${escapeJs(price)}',
+                      'Up Garage'
+                    )">Save Listing</button>
+                  </div>
+                </div>
+              `;
+            });
+          } else {
+            upgarageHtml += `
+              <div class="card">
+                <div class="content">
+                  <div class="title">No Up Garage results found</div>
+                </div>
+              </div>
+            `;
+          }
+
+          sections.push(upgarageHtml);
+        } catch (error) {
+          sections.push(`
+            <div class="section-title">Up Garage Results</div>
+            <div class="card">
+              <div class="content">
+                <div class="title">Could not load Up Garage results</div>
+              </div>
+            </div>
+          `);
+        }
+      }
+
       sections.push(`
         <div class="section-title">Other Sources</div>
 
@@ -449,59 +539,6 @@
       `);
 
       results.innerHTML = sections.join("");
-    }
-
-    function buildUpGarageSection(query, encodedQuery) {
-      if (currentPlan !== "builder" && currentPlan !== "collector") {
-        return `
-          <div class="section-title">Up Garage</div>
-          <div class="card">
-            <div class="content">
-              <div class="title">Up Garage is available on paid plans</div>
-              <div class="meta">Upgrade for access to premium JDM sources and notified searches.</div>
-              <a href="/pricing.html">View Pricing</a>
-            </div>
-          </div>
-        `;
-      }
-
-      if (!upgarageAcknowledged) {
-        return `
-          <div class="section-title">Up Garage</div>
-          <div class="card">
-            <div class="content">
-              <div class="title">Unlock Up Garage</div>
-              <div class="meta">
-                Up Garage is intended for enthusiasts sourcing parts for personal vehicle use, not resale. By viewing Up Garage results in Stray Parts, you agree to use this source in that spirit.
-              </div>
-              <label class="checkbox-row">
-                <input type="checkbox" id="upgarage-agree-checkbox">
-                <span>
-                 I understand and agree.
-                </span>
-              </label>
-              <div class="inline-actions">
-                <button onclick="acknowledgeUpGarage()">Continue to Up Garage access</button>
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      return `
-        <div class="section-title">Up Garage</div>
-        <div class="card">
-          <div class="content">
-            <div class="title">Search Up Garage</div>
-            <div class="meta">
-              Premium source for used JDM parts from Japan. Opens directly on Up Garage.
-            </div>
-            <a href="https://www.upgarage.com/en/ec/search/?search_word=${encodedQuery}" target="_blank" rel="noopener noreferrer">
-              Search Up Garage for "${escapeHtml(query)}"
-            </a>
-          </div>
-        </div>
-      `;
     }
 
     async function acknowledgeUpGarage() {
