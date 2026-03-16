@@ -1,8 +1,10 @@
 const cheerio = require("cheerio");
+const normalizeListings = require("../lib/normalize-listings");
 
 module.exports = async function handler(req, res) {
   const query = (req.query.q || "").trim();
   const debug = req.query.debug === "1";
+  const smart = req.query.smart === "1";
 
   if (!query) {
     return res.status(400).json({ error: "Missing query" });
@@ -61,7 +63,14 @@ module.exports = async function handler(req, res) {
       })
     );
 
-    const items = itemResults.filter(Boolean);
+    let items = itemResults.filter(Boolean);
+
+    items = await normalizeListings({
+      source: "Yahoo Auctions",
+      query,
+      items,
+      shouldNormalize: smart
+    });
 
     return res.status(200).json({
       source: "yahooauctions",
@@ -80,12 +89,10 @@ module.exports = async function handler(req, res) {
 function extractYahooItemUrls(html) {
   const urls = new Set();
 
-  // Absolute auction item URLs
   const absoluteMatches =
     html.match(/https:\/\/page\.auctions\.yahoo\.co\.jp\/jp\/auction\/[a-zA-Z0-9]+/g) || [];
   absoluteMatches.forEach((url) => urls.add(cleanUrl(url)));
 
-  // Relative auction item URLs
   const relativeMatches =
     html.match(/\/jp\/auction\/[a-zA-Z0-9]+/g) || [];
   relativeMatches.forEach((url) => {
@@ -123,17 +130,9 @@ async function fetchYahooAuctionItem(itemUrl) {
 
   const bodyText = cleanText($("body").text());
 
-  const price =
-    extractPrice(bodyText) ||
-    "Price not available";
-
-  const shipping =
-    extractShipping(bodyText) ||
-    "";
-
-  const timeLeft =
-    extractTimeLeft(bodyText) ||
-    "";
+  const price = extractPrice(bodyText) || "Price not available";
+  const shipping = extractShipping(bodyText) || "";
+  const timeLeft = extractTimeLeft(bodyText) || "";
 
   return {
     title: cleanTitle(title),
@@ -148,7 +147,6 @@ async function fetchYahooAuctionItem(itemUrl) {
 
 function extractPrice(text) {
   if (!text) return "";
-
   return (
     text.match(/現在\s*価格\s*[\d,]+円/)?.[0] ||
     text.match(/現在\s*[\d,]+円/)?.[0] ||
@@ -161,7 +159,6 @@ function extractPrice(text) {
 
 function extractShipping(text) {
   if (!text) return "";
-
   return (
     text.match(/送料無料/)?.[0] ||
     text.match(/送料未定/)?.[0] ||
@@ -173,7 +170,6 @@ function extractShipping(text) {
 
 function extractTimeLeft(text) {
   if (!text) return "";
-
   return (
     text.match(/残り\s*\d+日/)?.[0] ||
     text.match(/残り\s*\d+時間/)?.[0] ||
