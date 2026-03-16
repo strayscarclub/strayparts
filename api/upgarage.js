@@ -2,6 +2,7 @@ const cheerio = require("cheerio");
 
 module.exports = async function handler(req, res) {
   const query = (req.query.q || "").trim();
+  const debug = req.query.debug === "1";
 
   if (!query) {
     return res.status(400).json({ error: "Missing query" });
@@ -12,7 +13,8 @@ module.exports = async function handler(req, res) {
 
     const response = await fetch(searchUrl, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; StrayPartsBot/1.0; +https://www.strayparts.io)"
+        "User-Agent": "Mozilla/5.0 (compatible; StrayPartsBot/1.0; +https://www.strayparts.io)",
+        "Accept-Language": "en-US,en;q=0.9"
       }
     });
 
@@ -20,18 +22,52 @@ module.exports = async function handler(req, res) {
 
     if (!response.ok) {
       return res.status(response.status).json({
-        error: "Failed to fetch Up Garage results",
+        error: "Failed to fetch Up Garage search page",
         status: response.status
       });
     }
 
-    const results = parseUpGarageResults(html);
+    const itemUrls = extractItemUrls(html);
+
+    if (debug) {
+      return res.status(200).json({
+        source: "upgarage",
+        query,
+        search_url: searchUrl,
+        item_url_count: itemUrls.length,
+        item_urls: itemUrls.slice(0, 20),
+        html_preview: html.slice(0, 3000)
+      });
+    }
+
+    if (itemUrls.length === 0) {
+      return res.status(200).json({
+        source: "upgarage",
+        query,
+        count: 0,
+        items: []
+      });
+    }
+
+    const limitedUrls = itemUrls.slice(0, 12);
+
+    const itemResults = await Promise.all(
+      limitedUrls.map(async (url) => {
+        try {
+          return await fetchUpGarageItem(url);
+        } catch (error) {
+          return null;
+        }
+      })
+    );
+
+    const items = itemResults.filter(Boolean);
 
     return res.status(200).json({
       source: "upgarage",
       query,
-      count: results.length,
-      items: results.slice(0, 12)
+      count: items.length,
+      items
     });
   } catch (error) {
     return res.status(500).json({
@@ -41,84 +77,88 @@ module.exports = async function handler(req, res) {
   }
 };
 
-function parseUpGarageResults(html) {
-  const $ = cheerio.load(html);
-  const items = [];
-  const seen = new Set();
+function extractItemUrls(html) {
+  const urls = new Set();
 
-  // Broad approach: find item links first, then read nearby title/image/price.
-  $('a[href*="/en/ec/item/"]').each((_, el) => {
-    const href = $(el).attr("href");
-    if (!href) return;
+  // Absolute item URLs
+  const absoluteMatches = html.match(/https:\/\/www\.upgarage\.com\/en\/ec\/item\/\d+\/?/g) || [];
+  absoluteMatches.forEach((url) => urls.add(cleanItemUrl(url)));
 
-    const itemUrl = absoluteUrl(href);
-    if (seen.has(itemUrl)) return;
+  // Relative item URLs
+  const relativeMatches = html.match(/\/en\/ec\/item\/\d+\/?/g) || [];
+  relativeMatches.forEach((url) => urls.add(cleanItemUrl(`https://www.upgarage.com${url}`)));
 
-    const card = $(el).closest("li, article, div");
-    const cardText = normalizeWhitespace(card.text());
-
-    const title =
-      normalizeWhitespace($(el).find("img").attr("alt")) ||
-      normalizeWhitespace($(el).text()) ||
-      extractTitleFromText(cardText);
-
-    const imageUrl = absoluteUrl(
-      $(el).find("img").attr("src") ||
-      $(el).find("img").attr("data-src") ||
-      card.find("img").first().attr("src") ||
-      card.find("img").first().attr("data-src") ||
-      ""
-    );
-
-    const price = extractPrice(cardText);
-
-    if (!title) return;
-
-    seen.add(itemUrl);
-
-    items.push({
-      title,
-      item_url: itemUrl,
-      image_url: imageUrl,
-      price: price || "Price not available",
-      marketplace: "Up Garage"
-    });
-  });
-
-  return items;
+  return Array.from(urls);
 }
 
-function absoluteUrl(url) {
+function cleanItemUrl(url) {
   if (!url) return "";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  if (url.startsWith("//")) return `https:${url}`;
-  if (url.startsWith("/")) return `https://www.upgarage.com${url}`;
-  return `https://www.upgarage.com/${url}`;
+  return url.replace(/["'\\]/g, "");
+}
+
+async function fetchUpGarageItem(itemUrl) {
+  const response = await fetch(itemUrl, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (compatible; StrayPartsBot/1.0; +https://www.strayparts.io)",
+      "Accept-Language": "en-US,en;q=0.9"
+    }
+  });
+
+  const html = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`Failed item fetch: ${response.status}`);
+  }
+
+  const $ = cheerio.load(html);
+
+  const title =
+    $('meta[property="og:title"]').attr("content") ||
+    $("title").text().trim() ||
+    "";
+
+  const imageUrl =
+    $('meta[property="og:image"]').attr("content") ||
+    $('img').first().attr("src") ||
+    "";
+
+  const text = normalizeWhitespace($("body").text());
+
+  const price =
+    extractPrice(text) ||
+    extractPrice($.html()) ||
+    "Price not available";
+
+  return {
+    title: normalizeWhitespace(title),
+    item_url: itemUrl,
+    image_url: absolutizeUpGarageUrl(imageUrl),
+    price,
+    marketplace: "Up Garage"
+  };
+}
+
+function extractPrice(text) {
+  if (!text) return "";
+
+  const cleaned = normalizeWhitespace(text);
+
+  const yenMatch =
+    cleaned.match(/¥\s?[\d,]+/) ||
+    cleaned.match(/JPY\s?[\d,]+/i) ||
+    cleaned.match(/[\d,]+\s?yen/i);
+
+  return yenMatch ? yenMatch[0] : "";
 }
 
 function normalizeWhitespace(str) {
   return String(str || "").replace(/\s+/g, " ").trim();
 }
 
-function extractPrice(text) {
-  const cleaned = normalizeWhitespace(text);
-
-  // Try yen formats first
-  const yenMatch =
-    cleaned.match(/¥\s?[\d,]+/) ||
-    cleaned.match(/JPY\s?[\d,]+/i) ||
-    cleaned.match(/[\d,]+\s?yen/i);
-
-  if (yenMatch) return yenMatch[0];
-
-  return "";
-}
-
-function extractTitleFromText(text) {
-  const cleaned = normalizeWhitespace(text);
-  if (!cleaned) return "";
-
-  // Fallback: use the first chunk before price-ish text
-  const split = cleaned.split(/¥|JPY|yen/i)[0].trim();
-  return split || cleaned.slice(0, 120);
+function absolutizeUpGarageUrl(url) {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("//")) return `https:${url}`;
+  if (url.startsWith("/")) return `https://www.upgarage.com${url}`;
+  return `https://www.upgarage.com/${url}`;
 }
