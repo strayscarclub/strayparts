@@ -1,5 +1,8 @@
+const normalizeListings = require("../lib/normalize-listings");
+
 module.exports = async function handler(req, res) {
   const query = (req.query.q || "").trim();
+  const smart = req.query.smart === "1";
 
   if (!query) {
     return res.status(400).json({ error: "Missing query" });
@@ -36,7 +39,7 @@ module.exports = async function handler(req, res) {
 
     const rawItems = Array.isArray(data?.resources) ? data.resources : [];
 
-    const items = rawItems.map((item) => {
+    let items = rawItems.map((item) => {
       const title = cleanTitle(item.name || "Untitled listing");
       const itemUrl = item.id
         ? `https://www.upgarage.com/en/ec/item/${item.id}/`
@@ -51,20 +54,23 @@ module.exports = async function handler(req, res) {
           ? `¥${Number(item.price).toLocaleString("en-US")}`
           : "Price not available";
 
-      const shopName = item.shop_name || "";
-      const category = item.s_bunrui_name || "";
-      const condition = item.condition || "";
-
       return {
         title,
         item_url: itemUrl,
         image_url: imageUrl,
         price,
         marketplace: "Up Garage",
-        shop_name: shopName,
-        category,
-        condition
+        shop_name: item.shop_name || "",
+        category: item.s_bunrui_name || "",
+        condition: item.condition || ""
       };
+    });
+
+    items = await normalizeListings({
+      source: "Up Garage",
+      query,
+      items,
+      shouldNormalize: smart
     });
 
     return res.status(200).json({
