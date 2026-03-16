@@ -294,14 +294,14 @@
           <button onclick="logOut()">Log Out</button>
         `;
       } else {
-        currentPlan = "free";
-        upgarageAcknowledged = false;
+  currentPlan = "free";
+  upgarageAcknowledged = localStorage.getItem("upgarage_acknowledged") === "true";
 
-        accountBar.innerHTML = `
-          <a href="/login.html">Log In</a>
-          <a href="/signup.html">Sign Up</a>
-        `;
-      }
+  accountBar.innerHTML = `
+    <a href="/login.html">Log In</a>
+    <a href="/signup.html">Sign Up</a>
+  `;
+}
     }
 
     async function logOut() {
@@ -615,34 +615,36 @@ const yahooRes = await fetch(yahooUrl);
     }
 
     async function acknowledgeUpGarage() {
-      const checkbox = document.getElementById("upgarage-agree-checkbox");
+  const checkbox = document.getElementById("upgarage-agree-checkbox");
 
-      if (!checkbox || !checkbox.checked) {
-        alert("Please tick the checkbox to continue.");
-        return;
-      }
+  if (!checkbox || !checkbox.checked) {
+    alert("Please tick the checkbox to continue.");
+    return;
+  }
 
-      const { data: authData } = await supabaseClient.auth.getUser();
-      const user = authData.user;
+  const { data: authData } = await supabaseClient.auth.getUser();
+  const user = authData.user;
 
-      if (!user) {
-        window.location.href = "/login.html";
-        return;
-      }
+  if (!user) {
+    localStorage.setItem("upgarage_acknowledged", "true");
+    upgarageAcknowledged = true;
+    searchParts();
+    return;
+  }
 
-      const { error } = await supabaseClient
-        .from("profiles")
-        .update({ upgarage_acknowledged: true })
-        .eq("id", user.id);
+  const { error } = await supabaseClient
+    .from("profiles")
+    .update({ upgarage_acknowledged: true })
+    .eq("id", user.id);
 
-      if (error) {
-        alert("Could not save your acknowledgement.");
-        return;
-      }
+  if (error) {
+    alert("Could not save your acknowledgement.");
+    return;
+  }
 
-      upgarageAcknowledged = true;
-      searchParts();
-    }
+  upgarageAcknowledged = true;
+  searchParts();
+}
 
     async function saveListing(title, itemUrl, imageUrl, price, marketplace) {
       const { data: authData } = await supabaseClient.auth.getUser();
