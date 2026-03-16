@@ -105,6 +105,42 @@
       margin-right: auto;
     }
 
+    .tabs {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      margin: 0 0 24px 0;
+    }
+
+    .tab-btn {
+      background: #d6d1b9;
+      color: #222;
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .tab-btn:hover {
+      background: #cfc8aa;
+    }
+
+    .tab-btn.active {
+      background: #a42a0e;
+      color: white;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
     .section-title {
       text-align: left;
       font-size: 22px;
@@ -294,14 +330,14 @@
           <button onclick="logOut()">Log Out</button>
         `;
       } else {
-  currentPlan = "free";
-  upgarageAcknowledged = localStorage.getItem("upgarage_acknowledged") === "true";
+        currentPlan = "free";
+        upgarageAcknowledged = localStorage.getItem("upgarage_acknowledged") === "true";
 
-  accountBar.innerHTML = `
-    <a href="/login.html">Log In</a>
-    <a href="/signup.html">Sign Up</a>
-  `;
-}
+        accountBar.innerHTML = `
+          <a href="/login.html">Log In</a>
+          <a href="/signup.html">Sign Up</a>
+        `;
+      }
     }
 
     async function logOut() {
@@ -339,14 +375,16 @@
 
       await loadAccountBar();
 
-      const sections = [];
+      let ebayHtml = "";
+      let upgarageHtml = "";
+      let yahooHtml = "";
+      let otherSourcesHtml = "";
 
-      // eBay
       try {
         const ebayRes = await fetch("/api/ebay?q=" + encodedQuery);
         const ebayData = await ebayRes.json();
 
-        let ebayHtml = `<div class="section-title">eBay Results</div>`;
+        ebayHtml = `<div class="section-title">eBay Results</div>`;
 
         if (ebayData.itemSummaries && ebayData.itemSummaries.length > 0) {
           ebayData.itemSummaries.forEach((item) => {
@@ -401,52 +439,49 @@
             </div>
           `;
         }
-
-        sections.push(ebayHtml);
       } catch (error) {
-        sections.push(`
+        ebayHtml = `
           <div class="section-title">eBay Results</div>
           <div class="card">
             <div class="content">
               <div class="title">Could not load eBay results</div>
             </div>
           </div>
-        `);
+        `;
       }
 
-     // Up Garage
-if (!upgarageAcknowledged) {
-  sections.push(`
-    <div class="section-title">Up Garage</div>
-    <div class="card">
-      <div class="content">
-        <div class="title">Unlock Up Garage</div>
-        <div class="meta">
-          Up Garage is intended for enthusiasts sourcing parts for personal vehicle use, not resale. By viewing Up Garage results in Stray Parts, you agree to use this source in that spirit.
-        </div>
-        <label class="checkbox-row">
-          <input type="checkbox" id="upgarage-agree-checkbox">
-          <span>
-            I understand and agree.
-          </span>
-        </label>
-        <div class="inline-actions">
-          <button onclick="acknowledgeUpGarage()">Continue to Up Garage results</button>
-        </div>
-      </div>
-    </div>
-  `);
-} else {
-  try {
-    const upgarageUrl =
-      (currentPlan === "builder" || currentPlan === "collector")
-        ? "/api/upgarage?q=" + encodedQuery + "&smart=1"
-        : "/api/upgarage?q=" + encodedQuery;
+      if (!upgarageAcknowledged) {
+        upgarageHtml = `
+          <div class="section-title">Up Garage</div>
+          <div class="card">
+            <div class="content">
+              <div class="title">Unlock Up Garage</div>
+              <div class="meta">
+                Up Garage is intended for enthusiasts sourcing parts for personal vehicle use, not resale. By viewing Up Garage results in Stray Parts, you agree to use this source in that spirit.
+              </div>
+              <label class="checkbox-row">
+                <input type="checkbox" id="upgarage-agree-checkbox">
+                <span>
+                  I understand and agree.
+                </span>
+              </label>
+              <div class="inline-actions">
+                <button onclick="acknowledgeUpGarage()">Continue to Up Garage results</button>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        try {
+          const upgarageUrl =
+            (currentPlan === "builder" || currentPlan === "collector")
+              ? "/api/upgarage?q=" + encodedQuery + "&smart=1"
+              : "/api/upgarage?q=" + encodedQuery;
 
-    const upgarageRes = await fetch(upgarageUrl);
+          const upgarageRes = await fetch(upgarageUrl);
           const upgarageData = await upgarageRes.json();
 
-          let upgarageHtml = `<div class="section-title">Up Garage Results</div>`;
+          upgarageHtml = `<div class="section-title">Up Garage Results</div>`;
 
           if (upgarageData.items && upgarageData.items.length > 0) {
             upgarageData.items.forEach((item) => {
@@ -498,31 +533,28 @@ if (!upgarageAcknowledged) {
               </div>
             `;
           }
-
-          sections.push(upgarageHtml);
         } catch (error) {
-          sections.push(`
+          upgarageHtml = `
             <div class="section-title">Up Garage Results</div>
             <div class="card">
               <div class="content">
                 <div class="title">Could not load Up Garage results</div>
               </div>
             </div>
-          `);
+          `;
         }
       }
 
-      // Yahoo Auctions
       try {
         const yahooUrl =
-  (currentPlan === "builder" || currentPlan === "collector")
-    ? "/api/yahooauctions?q=" + encodedQuery + "&smart=1"
-    : "/api/yahooauctions?q=" + encodedQuery;
+          (currentPlan === "builder" || currentPlan === "collector")
+            ? "/api/yahooauctions?q=" + encodedQuery + "&smart=1"
+            : "/api/yahooauctions?q=" + encodedQuery;
 
-const yahooRes = await fetch(yahooUrl);
+        const yahooRes = await fetch(yahooUrl);
         const yahooData = await yahooRes.json();
 
-        let yahooHtml = `<div class="section-title">Yahoo Auctions Results</div>`;
+        yahooHtml = `<div class="section-title">Yahoo Auctions Results</div>`;
 
         if (yahooData.items && yahooData.items.length > 0) {
           yahooData.items.forEach((item) => {
@@ -575,23 +607,19 @@ const yahooRes = await fetch(yahooUrl);
             </div>
           `;
         }
-
-        sections.push(yahooHtml);
       } catch (error) {
-        sections.push(`
+        yahooHtml = `
           <div class="section-title">Yahoo Auctions Results</div>
           <div class="card">
             <div class="content">
               <div class="title">Could not load Yahoo Auctions results</div>
             </div>
           </div>
-        `);
+        `;
       }
 
-      // Other sources
-      sections.push(`
+      otherSourcesHtml = `
         <div class="section-title">Other Sources</div>
-
         <div class="source-grid">
           <div class="source-card">
             <h3>Facebook Marketplace</h3>
@@ -609,42 +637,82 @@ const yahooRes = await fetch(yahooUrl);
             </a>
           </div>
         </div>
-      `);
+      `;
 
-      results.innerHTML = sections.join("");
+      results.innerHTML = `
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="all" onclick="switchTab('all', this)">All</button>
+          <button class="tab-btn" data-tab="ebay" onclick="switchTab('ebay', this)">eBay</button>
+          <button class="tab-btn" data-tab="upgarage" onclick="switchTab('upgarage', this)">Up Garage</button>
+          <button class="tab-btn" data-tab="yahoo" onclick="switchTab('yahoo', this)">Yahoo Auctions</button>
+        </div>
+
+        <div class="tab-panel active" id="tab-all">
+          ${ebayHtml}
+          ${upgarageHtml}
+          ${yahooHtml}
+          ${otherSourcesHtml}
+        </div>
+
+        <div class="tab-panel" id="tab-ebay">
+          ${ebayHtml}
+        </div>
+
+        <div class="tab-panel" id="tab-upgarage">
+          ${upgarageHtml}
+        </div>
+
+        <div class="tab-panel" id="tab-yahoo">
+          ${yahooHtml}
+        </div>
+      `;
+    }
+
+    function switchTab(tabName, btn) {
+      document.querySelectorAll(".tab-panel").forEach(panel => {
+        panel.classList.remove("active");
+      });
+
+      document.querySelectorAll(".tab-btn").forEach(tab => {
+        tab.classList.remove("active");
+      });
+
+      const panel = document.getElementById("tab-" + tabName);
+      if (panel) panel.classList.add("active");
+      if (btn) btn.classList.add("active");
     }
 
     async function acknowledgeUpGarage() {
-  const checkbox = document.getElementById("upgarage-agree-checkbox");
+      const checkbox = document.getElementById("upgarage-agree-checkbox");
 
-  if (!checkbox || !checkbox.checked) {
-    alert("Please tick the checkbox to continue.");
-    return;
-  }
+      if (!checkbox || !checkbox.checked) {
+        alert("Please tick the checkbox to continue.");
+        return;
+      }
 
-  const { data: authData } = await supabaseClient.auth.getUser();
-  const user = authData.user;
+      const { data: authData } = await supabaseClient.auth.getUser();
+      const user = authData.user;
 
-  if (!user) {
-    localStorage.setItem("upgarage_acknowledged", "true");
-    upgarageAcknowledged = true;
-    searchParts();
-    return;
-  }
+      if (!user) {
+        localStorage.setItem("upgarage_acknowledged", "true");
+        upgarageAcknowledged = true;
+        searchParts();
+        return;
+      }
 
-  const { error } = await supabaseClient
-    .from("profiles")
-    .update({ upgarage_acknowledged: true })
-    .eq("id", user.id);
+      const { error } = await supabaseClient
+        .from("profiles")
+        .update({ upgarage_acknowledged: true })
+        .eq("id", user.id);
 
-  if (error) {
-    alert("Could not save your acknowledgement.");
-    return;
-  }
+      if (error) {
+        alert("Could not save your acknowledgement.");
+        return;
+      }
 
-  upgarageAcknowledged = true;
-  searchParts();
-}
+      upgarageAcknowledged = true;
+      searchParts();
+    }
 
     async function saveListing(title, itemUrl, imageUrl, price, marketplace) {
       const { data: authData } = await supabaseClient.auth.getUser();
