@@ -456,34 +456,42 @@
 
           if (upgarageData.items && upgarageData.items.length > 0) {
             upgarageData.items.forEach((item) => {
-              const title = item.title || "Untitled listing";
-              const itemUrl = item.item_url || "#";
-              const price = item.price || "Price not available";
-              const image = item.image_url || "";
+             const title = item.title || "Untitled listing";
+const itemUrl = item.item_url || "#";
+const price = item.price || "Price not available";
+const image = item.image_url || "";
+const shopName = item.shop_name || "";
+const category = item.category || "";
+const condition = item.condition || "";
 
-              upgarageHtml += `
-                <div class="card">
-                  ${
-                    image
-                      ? `<img class="thumb" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">`
-                      : `<div class="thumb"></div>`
-                  }
-                  <div class="content">
-                    <div class="title">${escapeHtml(title)}</div>
-                    <div class="price">${escapeHtml(price)}</div>
-                    <div class="meta">Marketplace: Up Garage</div>
-                    <a href="${escapeHtml(itemUrl)}" target="_blank" rel="noopener noreferrer">View on Up Garage</a>
-                    <br><br>
-                    <button onclick="saveListing(
-                      '${escapeJs(title)}',
-                      '${escapeJs(itemUrl)}',
-                      '${escapeJs(image)}',
-                      '${escapeJs(price)}',
-                      'Up Garage'
-                    )">Save Listing</button>
-                  </div>
-                </div>
-              `;
+upgarageHtml += `
+  <div class="card">
+    ${
+      image
+        ? `<img class="thumb" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">`
+        : `<div class="thumb"></div>`
+    }
+    <div class="content">
+      <div class="title">${escapeHtml(title)}</div>
+      <div class="price">${escapeHtml(price)}</div>
+      <div class="meta">
+        Marketplace: Up Garage
+        ${shopName ? ` • Shop: ${escapeHtml(shopName)}` : ""}
+        ${category ? ` • Category: ${escapeHtml(category)}` : ""}
+        ${condition ? ` • Condition: ${escapeHtml(condition)}` : ""}
+      </div>
+      <a href="${escapeHtml(itemUrl)}" target="_blank" rel="noopener noreferrer">View on Up Garage</a>
+      <br><br>
+      <button onclick="saveListing(
+        '${escapeJs(title)}',
+        '${escapeJs(itemUrl)}',
+        '${escapeJs(image)}',
+        '${escapeJs(price)}',
+        'Up Garage'
+      )">Save Listing</button>
+    </div>
+  </div>
+`;
             });
           } else {
             upgarageHtml += `
