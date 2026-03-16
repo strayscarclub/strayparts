@@ -456,42 +456,42 @@
 
           if (upgarageData.items && upgarageData.items.length > 0) {
             upgarageData.items.forEach((item) => {
-             const title = item.title || "Untitled listing";
-const itemUrl = item.item_url || "#";
-const price = item.price || "Price not available";
-const image = item.image_url || "";
-const shopName = item.shop_name || "";
-const category = item.category || "";
-const condition = item.condition || "";
+              const title = item.title || "Untitled listing";
+              const itemUrl = item.item_url || "#";
+              const price = item.price || "Price not available";
+              const image = item.image_url || "";
+              const shopName = item.shop_name || "";
+              const category = item.category || "";
+              const condition = item.condition || "";
 
-upgarageHtml += `
-  <div class="card">
-    ${
-      image
-        ? `<img class="thumb" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">`
-        : `<div class="thumb"></div>`
-    }
-    <div class="content">
-      <div class="title">${escapeHtml(title)}</div>
-      <div class="price">${escapeHtml(price)}</div>
-      <div class="meta">
-        Marketplace: Up Garage
-        ${shopName ? ` • Shop: ${escapeHtml(shopName)}` : ""}
-        ${category ? ` • Category: ${escapeHtml(category)}` : ""}
-        ${condition ? ` • Condition: ${escapeHtml(condition)}` : ""}
-      </div>
-      <a href="${escapeHtml(itemUrl)}" target="_blank" rel="noopener noreferrer">View on Up Garage</a>
-      <br><br>
-      <button onclick="saveListing(
-        '${escapeJs(title)}',
-        '${escapeJs(itemUrl)}',
-        '${escapeJs(image)}',
-        '${escapeJs(price)}',
-        'Up Garage'
-      )">Save Listing</button>
-    </div>
-  </div>
-`;
+              upgarageHtml += `
+                <div class="card">
+                  ${
+                    image
+                      ? `<img class="thumb" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">`
+                      : `<div class="thumb"></div>`
+                  }
+                  <div class="content">
+                    <div class="title">${escapeHtml(title)}</div>
+                    <div class="price">${escapeHtml(price)}</div>
+                    <div class="meta">
+                      Marketplace: Up Garage
+                      ${shopName ? ` • Shop: ${escapeHtml(shopName)}` : ""}
+                      ${category ? ` • Category: ${escapeHtml(category)}` : ""}
+                      ${condition ? ` • Condition: ${escapeHtml(condition)}` : ""}
+                    </div>
+                    <a href="${escapeHtml(itemUrl)}" target="_blank" rel="noopener noreferrer">View on Up Garage</a>
+                    <br><br>
+                    <button onclick="saveListing(
+                      '${escapeJs(title)}',
+                      '${escapeJs(itemUrl)}',
+                      '${escapeJs(image)}',
+                      '${escapeJs(price)}',
+                      'Up Garage'
+                    )">Save Listing</button>
+                  </div>
+                </div>
+              `;
             });
           } else {
             upgarageHtml += `
@@ -516,6 +516,76 @@ upgarageHtml += `
         }
       }
 
+      // Yahoo Auctions
+      try {
+        const yahooRes = await fetch("/api/yahooauctions?q=" + encodedQuery);
+        const yahooData = await yahooRes.json();
+
+        let yahooHtml = `<div class="section-title">Yahoo Auctions Results</div>`;
+
+        if (yahooData.items && yahooData.items.length > 0) {
+          yahooData.items.forEach((item) => {
+            const title = item.title || "Untitled listing";
+            const itemUrl = item.item_url || "#";
+            const price = item.price || "Price not available";
+            const image = item.image_url || "";
+            const shipping = item.shipping || "";
+            const timeLeft = item.time_left || "";
+
+            yahooHtml += `
+              <div class="card">
+                ${
+                  image
+                    ? `<img class="thumb" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">`
+                    : `<div class="thumb"></div>`
+                }
+                <div class="content">
+                  <div class="title">${escapeHtml(title)}</div>
+                  <div class="price">${escapeHtml(price)}</div>
+                  <div class="meta">
+                    Marketplace: Yahoo Auctions
+                    ${shipping ? ` • ${escapeHtml(shipping)}` : ""}
+                    ${timeLeft ? ` • ${escapeHtml(timeLeft)}` : ""}
+                  </div>
+                  <a href="${escapeHtml(itemUrl)}" target="_blank" rel="noopener noreferrer">View on Yahoo Auctions</a>
+                  <br><br>
+                  <button onclick="saveListing(
+                    '${escapeJs(title)}',
+                    '${escapeJs(itemUrl)}',
+                    '${escapeJs(image)}',
+                    '${escapeJs(price)}',
+                    'Yahoo Auctions'
+                  )">Save Listing</button>
+                </div>
+              </div>
+            `;
+          });
+        } else {
+          yahooHtml += `
+            <div class="card">
+              <div class="content">
+                <div class="title">No Yahoo Auctions results found</div>
+                <a href="https://auctions.yahoo.co.jp/search/search/${encodedQuery}/0/" target="_blank" rel="noopener noreferrer">
+                  Search directly on Yahoo Auctions
+                </a>
+              </div>
+            </div>
+          `;
+        }
+
+        sections.push(yahooHtml);
+      } catch (error) {
+        sections.push(`
+          <div class="section-title">Yahoo Auctions Results</div>
+          <div class="card">
+            <div class="content">
+              <div class="title">Could not load Yahoo Auctions results</div>
+            </div>
+          </div>
+        `);
+      }
+
+      // Other sources
       sections.push(`
         <div class="section-title">Other Sources</div>
 
@@ -525,14 +595,6 @@ upgarageHtml += `
             <p class="muted">Search Marketplace for <strong>${escapeHtml(query)}</strong></p>
             <a href="https://www.facebook.com/marketplace/search/?query=${encodedQuery}" target="_blank" rel="noopener noreferrer">
               Search Facebook Marketplace
-            </a>
-          </div>
-
-          <div class="source-card">
-            <h3>Yahoo Auctions Japan</h3>
-            <p class="muted">Search Yahoo Auctions Japan for <strong>${escapeHtml(query)}</strong></p>
-            <a href="https://auctions.yahoo.co.jp/search/search?p=${encodedQuery}" target="_blank" rel="noopener noreferrer">
-              Search Yahoo Auctions Japan
             </a>
           </div>
 
