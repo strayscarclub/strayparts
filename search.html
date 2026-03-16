@@ -449,14 +449,15 @@
         `);
       } else {
         try {
-          const upgarageRes = await fetch("/api/upgarage?q=" + encodedQuery);
+          const upgarageRes = await fetch("/api/upgarage?q=" + encodedQuery + "&smart=1");
           const upgarageData = await upgarageRes.json();
 
           let upgarageHtml = `<div class="section-title">Up Garage Results</div>`;
 
           if (upgarageData.items && upgarageData.items.length > 0) {
             upgarageData.items.forEach((item) => {
-              const title = item.title || "Untitled listing";
+              const title = item.display_title || item.title || "Untitled listing";
+              const englishHint = item.english_hint || "";
               const itemUrl = item.item_url || "#";
               const price = item.price || "Price not available";
               const image = item.image_url || "";
@@ -473,6 +474,7 @@
                   }
                   <div class="content">
                     <div class="title">${escapeHtml(title)}</div>
+                    ${englishHint ? `<div class="meta">${escapeHtml(englishHint)}</div>` : ""}
                     <div class="price">${escapeHtml(price)}</div>
                     <div class="meta">
                       Marketplace: Up Garage
@@ -518,14 +520,20 @@
 
       // Yahoo Auctions
       try {
-        const yahooRes = await fetch("/api/yahooauctions?q=" + encodedQuery);
+        const yahooUrl =
+  (currentPlan === "builder" || currentPlan === "collector")
+    ? "/api/yahooauctions?q=" + encodedQuery + "&smart=1"
+    : "/api/yahooauctions?q=" + encodedQuery;
+
+const yahooRes = await fetch(yahooUrl);
         const yahooData = await yahooRes.json();
 
         let yahooHtml = `<div class="section-title">Yahoo Auctions Results</div>`;
 
         if (yahooData.items && yahooData.items.length > 0) {
           yahooData.items.forEach((item) => {
-            const title = item.title || "Untitled listing";
+            const title = item.display_title || item.title || "Untitled listing";
+            const englishHint = item.english_hint || "";
             const itemUrl = item.item_url || "#";
             const price = item.price || "Price not available";
             const image = item.image_url || "";
@@ -541,6 +549,7 @@
                 }
                 <div class="content">
                   <div class="title">${escapeHtml(title)}</div>
+                  ${englishHint ? `<div class="meta">${escapeHtml(englishHint)}</div>` : ""}
                   <div class="price">${escapeHtml(price)}</div>
                   <div class="meta">
                     Marketplace: Yahoo Auctions
