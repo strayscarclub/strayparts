@@ -1,14 +1,30 @@
 const Stripe = require("stripe");
 const { createClient } = require("@supabase/supabase-js");
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return res.status(500).json({ error: "Missing STRIPE_SECRET_KEY" });
+    }
+
+    if (!process.env.STRIPE_PRICE_ID_BUILDER) {
+      return res.status(500).json({ error: "Missing STRIPE_PRICE_ID_BUILDER" });
+    }
+
+    if (!process.env.STRIPE_PRICE_ID_COLLECTOR) {
+      return res.status(500).json({ error: "Missing STRIPE_PRICE_ID_COLLECTOR" });
+    }
+
+    if (!process.env.SITE_URL) {
+      return res.status(500).json({ error: "Missing SITE_URL" });
+    }
+
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
     const { plan, userId, email } = req.body || {};
 
     if (!plan || !userId || !email) {
@@ -31,11 +47,18 @@ module.exports = async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("stripe_customer_id")
       .eq("id", userId)
       .single();
+
+    if (profileError) {
+      return res.status(500).json({
+        error: "Could not load user profile",
+        details: profileError.message
+      });
+    }
 
     let customerId = profile?.stripe_customer_id || null;
 
@@ -49,10 +72,17 @@ module.exports = async function handler(req, res) {
 
       customerId = customer.id;
 
-      await supabase
+      const { error: updateError } = await supabase
         .from("profiles")
         .update({ stripe_customer_id: customerId })
         .eq("id", userId);
+
+      if (updateError) {
+        return res.status(500).json({
+          error: "Could not save Stripe customer ID",
+          details: updateError.message
+        });
+      }
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -77,7 +107,7 @@ module.exports = async function handler(req, res) {
   } catch (error) {
     return res.status(500).json({
       error: "Failed to create checkout session",
-      details: String(error)
+      details: error.message || String(error)
     });
   }
 };
