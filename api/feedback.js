@@ -21,7 +21,7 @@ export default async function handler(req, res) {
 
     await resend.emails.send({
       from: "Stray Parts <onboarding@resend.dev>",
-      to: "contact@strayparts.io",
+      to: "strayscarclub@gmail.com",
       subject: `New Stray Parts feedback: ${safeType}`,
       reply_to: safeEmail || undefined,
       text: [
