@@ -4,51 +4,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pricing - Stray Parts</title>
+  <link rel="stylesheet" href="/site.css" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #ede8d0;
-      color: #222;
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 60px 20px;
-      line-height: 1.6;
+    .pricing-page {
       text-align: center;
-      position: relative;
     }
 
-    .account-bar {
-      position: absolute;
-      top: 20px;
-      right: 20px;
+    .pricing-hero {
+      max-width: 760px;
+      margin: 0 auto 40px;
     }
 
-    .account-bar a,
-    .account-bar button {
-      margin-left: 10px;
-      background: none;
-      border: none;
-      color: #a42a0e;
-      font-size: 15px;
-      text-decoration: none;
-      cursor: pointer;
-      padding: 0;
-    }
-
-    .account-bar a:hover,
-    .account-bar button:hover {
-      color: #c43c1d;
-    }
-
-    h1 {
-      margin-bottom: 10px;
+    .pricing-hero h1 {
       font-size: 44px;
+      margin-bottom: 10px;
     }
 
-    .subtitle {
+    .pricing-subtitle {
       color: #555;
       max-width: 700px;
-      margin: 0 auto 40px auto;
+      margin: 0 auto;
+      line-height: 1.7;
+      font-size: 16px;
     }
 
     .pricing-wrap {
@@ -56,6 +33,7 @@
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 24px;
       margin-top: 40px;
+      align-items: stretch;
     }
 
     .plan {
@@ -64,7 +42,9 @@
       border-radius: 16px;
       padding: 28px;
       text-align: left;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
     }
 
     .plan h2 {
@@ -83,13 +63,14 @@
       margin-bottom: 18px;
     }
 
-    .price {
+    .plan-price {
       font-size: 34px;
       font-weight: bold;
       margin: 10px 0 4px 0;
+      color: white;
     }
 
-    .per {
+    .plan-per {
       color: #aaa;
       margin-bottom: 24px;
       font-size: 14px;
@@ -98,273 +79,188 @@
     .plan ul {
       list-style: none;
       padding: 0;
-      margin: 0 0 28px 0;
+      margin: 0;
     }
 
     .plan li {
       margin-bottom: 12px;
       color: #ddd;
+      line-height: 1.6;
     }
 
     .plan strong {
       color: white;
     }
 
-    .btn {
-      display: inline-block;
+    .plan-spacer {
+      flex: 1;
+    }
+
+    .plan-actions {
+      margin-top: 24px;
+    }
+
+    .plan-actions .btn {
       width: 100%;
-      box-sizing: border-box;
       text-align: center;
-      padding: 14px 18px;
-      border-radius: 8px;
-      text-decoration: none;
       font-weight: bold;
       font-size: 16px;
-      border: none;
-      cursor: pointer;
+      padding: 14px 18px;
     }
 
-    .btn-primary {
-      background: #a42a0e;
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background: #c43c1d;
-    }
-
-    .btn-secondary {
-      background: #2a2a2a;
-      color: white;
-    }
-
-    .btn-secondary:hover {
-      background: #3a3a3a;
+    .plan-feature-note {
+      margin-top: 10px;
+      color: #aaa;
+      font-size: 13px;
+      line-height: 1.5;
     }
 
     .note {
       margin-top: 40px;
       color: #666;
       font-size: 14px;
+      line-height: 1.6;
     }
 
-    a {
-      color: #a42a0e;
-      text-decoration: none;
+    @media (max-width: 760px) {
+      .pricing-hero h1 {
+        font-size: 34px;
+      }
     }
-
-    a:hover {
-      color: #c43c1d;
-    }
-
-    footer {
-      margin-top: 80px;
-      padding: 30px 20px;
-      border-top: 1px solid #d6d1b9;
-      text-align: center;
-    }
-
-    footer a {
-      color: #a42a0e;
-      text-decoration: none;
-      margin: 0 10px;
-    }
-
-    footer a:hover {
-      color: #c43c1d;
-    }
-    .plan-btn {
-  display: inline-block;
-  padding: 14px 22px;
-  font-size: 16px;
-  border: none;
-  border-radius: 8px;
-  background: #a42a0e;
-  color: white;
-  cursor: pointer;
-  text-decoration: none;
-  margin-top: 12px;
-}
-
-.plan-btn:hover {
-  background: #c43c1d;
-}
   </style>
 </head>
 <body>
-  <div class="account-bar" id="account-bar"></div>
+  <div class="page pricing-page">
+    <div class="topbar">
+      <div class="logo-wrap">
+        <a href="/">
+          <img src="/strayparts-logo.png" alt="Stray Parts logo">
+        </a>
+      </div>
 
-  <h1>Pricing</h1>
-  <p class="subtitle">
-    Find rare JDM and enthusiast car parts faster, save the listings you care about, and get notified when the parts you want are newly listed.
-  </p>
-
-  <div class="pricing-wrap">
-    <div class="plan">
-      <div class="tag">For casual browsing</div>
-      <h2>Free</h2>
-      <div class="price">$0</div>
-      <div class="per">No monthly cost</div>
-
-      <ul>
-        <li><strong>Marketplace access:</strong> eBay, Amazon and Yahoo Auctions</li>
-        <li><strong>Saved listings:</strong> Up to 5 at one time</li>
-        <li><strong>Notified searches:</strong> None</li>
-      </ul>
-
-      <a class="btn btn-secondary" href="/signup.html">Create Free Account</a>
+      <div class="account-bar" id="account-bar"></div>
     </div>
 
-    <div class="plan">
-      <div class="tag">Most popular</div>
-      <h2>Builder</h2>
-      <div class="price">$10 NZD</div>
-      <div class="per">per month</div>
-
-      <ul>
-        <li><strong>Marketplace access:</strong> everything in Free</li>
-        <li><strong>Saved listings:</strong> Unlimited</li>
-        <li><strong>Notified searches:</strong> Up to 10</li>
-        <li><strong>Best for:</strong> active builds and part hunting</li>
-      </ul>
-
-      <button class="plan-btn" onclick="startCheckout('builder')">Get Builder</button>
+    <div class="pricing-hero">
+      <h1>Pricing</h1>
+      <p class="pricing-subtitle">
+        Search rare car parts across multiple marketplaces, save the listings you care about, and get notified when new parts appear.
+      </p>
     </div>
 
-    <div class="plan">
-      <div class="tag">For serious collectors</div>
-      <h2>Collector</h2>
-      <div class="price">$20 NZD</div>
-      <div class="per">per month</div>
+    <div class="pricing-wrap">
+      <div class="plan">
+        <div class="tag">For casual browsing</div>
+        <h2>Free</h2>
+        <div class="plan-price">$0</div>
+        <div class="plan-per">No monthly cost</div>
 
-      <ul>
-        <li><strong>Marketplace access:</strong> everything in Builder</li>
-        <li><strong>Saved listings:</strong> Unlimited</li>
-        <li><strong>Notified searches:</strong> Up to 30</li>
-        <li><strong>Best for:</strong> restorations, rare parts and constant monitoring</li>
-      </ul>
+        <ul>
+          <li><strong>Marketplace access:</strong> Search eBay, Yahoo Auctions and Up Garage</li>
+          <li><strong>Search results:</strong> Raw marketplace listings</li>
+          <li><strong>Saved listings:</strong> Up to 5</li>
+          <li><strong>Alerts:</strong> Not included</li>
+          <li><strong>Best for:</strong> Occasional browsing and trying the platform</li>
+        </ul>
 
-      <button class="plan-btn" onclick="startCheckout('collector')">Get Collector</button>
+        <div class="plan-spacer"></div>
+
+        <div class="plan-actions">
+          <a class="btn btn-secondary" href="/signup.html">Create Free Account</a>
+        </div>
+      </div>
+
+      <div class="plan">
+        <div class="tag">Most popular</div>
+        <h2>Builder</h2>
+        <div class="plan-price">$10 NZD</div>
+        <div class="plan-per">per month</div>
+
+        <ul>
+          <li><strong>Marketplace access:</strong> eBay, Yahoo Auctions and Up Garage</li>
+          <li><strong>Smart Search:</strong> Cleaned and improved results using AI</li>
+          <li><strong>Saved listings:</strong> Unlimited</li>
+          <li><strong>Alerts:</strong> Up to 10 notified searches</li>
+          <li><strong>Alert coverage:</strong> eBay, Yahoo Auctions and Up Garage</li>
+          <li><strong>Best for:</strong> Active builds and regular part hunting</li>
+        </ul>
+
+        <div class="plan-spacer"></div>
+
+        <div class="plan-actions">
+          <button class="btn" onclick="startCheckout('builder')">Get Builder</button>
+        </div>
+      </div>
+
+      <div class="plan">
+        <div class="tag">For serious collectors</div>
+        <h2>Collector</h2>
+        <div class="plan-price">$20 NZD</div>
+        <div class="plan-per">per month</div>
+
+        <ul>
+          <li><strong>Marketplace access:</strong> eBay, Yahoo Auctions and Up Garage</li>
+          <li><strong>Smart Search:</strong> Cleaned and improved results using AI</li>
+          <li><strong>Saved listings:</strong> Unlimited</li>
+          <li><strong>Alerts:</strong> Up to 30 notified searches</li>
+          <li><strong>Alert coverage:</strong> eBay, Yahoo Auctions and Up Garage</li>
+          <li><strong>Best for:</strong> Restorations, rare parts and ongoing monitoring</li>
+        </ul>
+
+        <div class="plan-spacer"></div>
+
+        <div class="plan-actions">
+          <button class="btn" onclick="startCheckout('collector')">Get Collector</button>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <p class="note">
-    Billing and premium activation are coming next. For now, create an account and start using Stray Parts.
-  </p>
-
-  <footer>
-    <p style="color:#666;font-size:14px;margin-bottom:14px;">
-      Stray Parts searches marketplaces like eBay, Facebook Marketplace and Yahoo Auctions to help enthusiasts find rare car parts faster.
+    <p class="note">
+      Paid plans unlock Smart Search improvements, higher saved listing limits and multi-marketplace alerts.
     </p>
 
-    <div style="margin-bottom:12px;">
-      <a href="/">Home</a>
-      <a href="/about.html">About</a>
-      <a href="/contact.html">Contact</a>
-      <a href="/privacy.html">Privacy</a>
-      <a href="/pricing.html">Pricing</a>
-    </div>
+    <div id="site-footer"></div>
+  </div>
 
-    <p style="color:#888;font-size:13px;margin:0;">© Stray Parts</p>
-  </footer>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const SUPABASE_URL = "https://gapajajlaerwfuqrdboz.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGFqYWpsYWVyd2Z1cXJkYm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMjI5ODIsImV4cCI6MjA4ODU5ODk4Mn0.sQ_WUObhZLHIPpEvO7lUjysHw58hNn_Pw6c4dft9hi8";
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  async function startCheckout(plan) {
-    const { data: authData } = await supabaseClient.auth.getUser();
-    const user = authData.user;
-
-    if (!user) {
-      window.location.href = "/login.html";
-      return;
-    }
-
-    const response = await fetch("/api/create-checkout-session", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        plan,
-        userId: user.id,
-        email: user.email
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok || !data.url) {
-      alert("Could not start checkout.");
-      return;
-    }
-
-    window.location.href = data.url;
-  }
-
-  async function openBillingPortal() {
-    const { data: authData } = await supabaseClient.auth.getUser();
-    const user = authData.user;
-
-    if (!user) {
-      window.location.href = "/login.html";
-      return;
-    }
-
-    const response = await fetch("/api/create-portal-session", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        userId: user.id
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok || !data.url) {
-      alert("Could not open billing portal.");
-      return;
-    }
-
-    window.location.href = data.url;
-  }
-</script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/site.js"></script>
   <script>
-    const SUPABASE_URL = "https://gapajajlaerwfuqrdboz.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGFqYWpsYWVyd2Z1cXJkYm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMjI5ODIsImV4cCI6MjA4ODU5ODk4Mn0.sQ_WUObhZLHIPpEvO7lUjysHw58hNn_Pw6c4dft9hi8";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    async function startCheckout(plan) {
+      const user = await getCurrentUser();
 
-    async function loadAccountBar() {
-      const accountBar = document.getElementById("account-bar");
-      if (!accountBar) return;
-
-      const { data: authData } = await supabaseClient.auth.getUser();
-      const user = authData.user;
-
-      if (user) {
-        accountBar.innerHTML = `
-          <a href="/saved.html">Saved Listings</a>
-          <button onclick="logOut()">Log Out</button>
-        `;
-      } else {
-        accountBar.innerHTML = `
-          <a href="/login.html">Log In</a>
-          <a href="/signup.html">Sign Up</a>
-        `;
+      if (!user) {
+        window.location.href = "/login.html";
+        return;
       }
+
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          plan,
+          userId: user.id,
+          email: user.email
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.url) {
+        alert("Could not start checkout.");
+        return;
+      }
+
+      window.location.href = data.url;
     }
 
-    async function logOut() {
-      await supabaseClient.auth.signOut();
-      window.location.href = "/";
+    async function initPricingPage() {
+      await loadAccountBar();
+      mountSiteFooter();
     }
 
-    loadAccountBar();
+    initPricingPage();
   </script>
 </body>
 </html>
