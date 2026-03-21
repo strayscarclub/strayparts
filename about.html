@@ -1,45 +1,72 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>About - Stray Parts</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About - Stray Parts</title>
+  <link rel="stylesheet" href="/site.css" />
+  <style>
+    .content-page {
+      max-width: 800px;
+      margin: 0 auto;
+    }
 
-<style>
-body{
-font-family:Arial;
-background:#0f0f0f;
-color:white;
-max-width:800px;
-margin:auto;
-padding:60px 20px;
-line-height:1.7;
-}
+    .content-page .hero {
+      margin-bottom: 34px;
+    }
 
-a{
-color:#a42a0e;
-}
+    .content-copy {
+      color: #555;
+      line-height: 1.8;
+      font-size: 16px;
+    }
 
-p{
-color:#c0c0c0;
-}
-</style>
-
+    .content-copy p {
+      margin: 0 0 18px;
+    }
+  </style>
 </head>
-
 <body>
+  <div class="page">
+    <div class="topbar">
+      <div class="logo-wrap">
+        <a href="/">
+          <img src="/strayparts-logo.png" alt="Stray Parts logo">
+        </a>
+      </div>
 
-<h1>About Stray Parts</h1>
+      <div class="account-bar" id="account-bar"></div>
+    </div>
 
-<p>
-Stray Parts is a search tool designed to help car enthusiasts find rare and hard-to-find car parts across multiple marketplaces.
-</p>
+    <main class="content-page">
+      <div class="hero">
+        <h1>About Stray Parts</h1>
+        <p class="subtext">A simpler way to search for rare car parts across multiple marketplaces.</p>
+      </div>
 
-<p>
-Instead of searching multiple websites individually, Stray Parts allows users to search platforms like eBay, Facebook Marketplace, Yahoo Auctions Japan and online forums from one place.
-</p>
+      <div class="content-copy">
+        <p>
+          Stray Parts is a search tool designed to help car enthusiasts find rare and hard-to-find car parts across multiple marketplaces.
+        </p>
 
-<p>
-Our goal is to make finding rare automotive parts faster and easier for enthusiasts, restorers and builders.
-</p>
+        <p>
+          Instead of searching multiple websites individually, Stray Parts allows users to search platforms like eBay, Facebook Marketplace, Yahoo Auctions and online forums from one place.
+        </p>
 
+        <p>
+          Our goal is to make finding rare automotive parts faster and easier for enthusiasts, restorers and builders.
+        </p>
+      </div>
+    </main>
+
+    <div id="site-footer"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/site.js"></script>
+  <script>
+    loadAccountBar();
+    mountSiteFooter();
+  </script>
 </body>
 </html>
