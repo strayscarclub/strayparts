@@ -4,89 +4,124 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Log In - Stray Parts</title>
+  <link rel="stylesheet" href="/site.css" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #ede8d0;
-      color: #222;
-      text-align: center;
-      padding: 60px 20px;
-      margin: 0;
-    }
-
-    .wrap {
+    .auth-page {
       max-width: 480px;
       margin: 0 auto;
     }
 
-    h1 {
-      margin-bottom: 10px;
-    }
-
-    p {
-      color: #555;
-    }
-
-    input {
-      width: 100%;
-      padding: 14px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      margin-top: 12px;
-      box-sizing: border-box;
-    }
-
-    button {
-      width: 100%;
-      padding: 14px;
-      font-size: 18px;
-      border: none;
-      background: #a42a0e;
+    .auth-card {
+      background: #1b1b1b;
       color: white;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 16px;
+      border-radius: 16px;
+      padding: 28px;
+      text-align: left;
     }
 
-    button:hover {
-      background: #c43c1d;
+    .auth-card .subtext {
+      color: #aaa;
+      margin-bottom: 22px;
+      line-height: 1.6;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #ddd;
+    }
+
+    .form-group input {
+      width: 100%;
+      max-width: 100%;
+      font-size: 16px;
+      padding: 14px;
+      border-radius: 8px;
+      border: 1px solid #3a3a3a;
+      background: #2a2a2a;
+      color: white;
+      outline: none;
+    }
+
+    .form-group input::placeholder {
+      color: #999;
+    }
+
+    .auth-btn {
+      width: 100%;
+      margin-top: 6px;
+      text-align: center;
+      font-weight: bold;
     }
 
     .message {
+      margin-top: 18px;
+      color: #ccc;
+      min-height: 20px;
+      line-height: 1.5;
+    }
+
+    .auth-footer {
       margin-top: 20px;
+      text-align: center;
       color: #555;
     }
 
-    a {
+    .auth-footer a {
       color: #a42a0e;
-      text-decoration: none;
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Log In</h1>
-    <p>Access your saved searches.</p>
+  <div class="page">
+    <div class="topbar">
+      <div class="logo-wrap">
+        <a href="/">
+          <img src="/strayparts-logo.png" alt="Stray Parts logo">
+        </a>
+      </div>
 
-    <input id="email" type="email" placeholder="Email address">
-    <input id="password" type="password" placeholder="Password">
+      <div class="account-bar" id="account-bar"></div>
+    </div>
 
-    <button onclick="logIn()">Log In</button>
+    <main class="auth-page">
+      <div class="hero" style="margin-bottom: 28px;">
+        <h1>Log In</h1>
+        <p class="subtext">Access your saved listings, alerts and account tools.</p>
+      </div>
 
-    <div class="message" id="message"></div>
+      <div class="auth-card">
+        <div class="form-group">
+          <label for="email">Email address</label>
+          <input id="email" type="email" placeholder="Email address" />
+        </div>
 
-    <p style="margin-top:20px;">
-      Need an account? <a href="/signup.html">Sign up</a>
-    </p>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="Password" />
+        </div>
+
+        <button class="btn auth-btn" onclick="logIn()">Log In</button>
+
+        <div class="message" id="message"></div>
+      </div>
+
+      <p class="auth-footer">
+        Need an account? <a href="/signup.html">Sign up</a>
+      </p>
+    </main>
+
+    <div id="site-footer"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/site.js"></script>
   <script>
-    const SUPABASE_URL = "https://gapajajlaerwfuqrdboz.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGFqYWpsYWVyd2Z1cXJkYm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMjI5ODIsImV4cCI6MjA4ODU5ODk4Mn0.sQ_WUObhZLHIPpEvO7lUjysHw58hNn_Pw6c4dft9hi8";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
     async function logIn() {
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
@@ -106,9 +141,28 @@
 
       message.innerText = "Logged in. Redirecting...";
       setTimeout(() => {
-        window.location.href = "/saved.html";
-      }, 1000);
+        window.location.href = "/my-garage.html";
+      }, 800);
     }
+
+    async function initLoginPage() {
+      await loadAccountBar();
+      mountSiteFooter();
+
+      document.getElementById("password").addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+          logIn();
+        }
+      });
+
+      document.getElementById("email").addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+          logIn();
+        }
+      });
+    }
+
+    initLoginPage();
   </script>
 </body>
 </html>
