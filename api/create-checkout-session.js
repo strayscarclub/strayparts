@@ -94,7 +94,7 @@ module.exports = async function handler(req, res) {
           quantity: 1
         }
       ],
-      success_url: `${process.env.SITE_URL}/pricing.html?success=1`,
+      success_url: `${process.env.SITE_URL}/my-garage.html?success=1`,
       cancel_url: `${process.env.SITE_URL}/pricing.html?canceled=1`,
       allow_promotion_codes: true,
       metadata: {
