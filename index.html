@@ -4,163 +4,80 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Stray Parts</title>
+  <link rel="stylesheet" href="/site.css" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
+    .home-page {
       text-align: center;
-      background: #ede8d0;
-      color: #222;
       padding-top: 50px;
-      position: relative;
-      margin: 0;
     }
 
-    .account-bar {
-      position: absolute;
-      top: 20px;
-      right: 20px;
+    .home-account-wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 20px 20px 0;
+      display: flex;
+      justify-content: flex-end;
     }
 
-    .account-bar a,
-    .account-bar button {
-      margin-left: 10px;
-      background: none;
-      border: none;
-      color: #a42a0e;
-      font-size: 15px;
-      text-decoration: none;
-      cursor: pointer;
-      padding: 0;
+    .home-hero {
+      padding: 10px 20px 0;
     }
 
-    .account-bar a:hover,
-    .account-bar button:hover {
-      color: #c43c1d;
-    }
-
-    .hero-logo {
-  margin: 0 auto 0 auto;
-  text-align: center;
-}
-
-.hero-logo img {
-  width: min(500px, 70vw);
-  height: auto;
-  display: block;
-  margin: 0 auto;
-}
-
-    p {
+    .home-tagline {
       color: #555;
       margin-top: 10px;
+      font-size: 16px;
     }
 
-    input {
+    .home-search {
+      margin-top: 24px;
+    }
+
+    .home-search input {
       width: 320px;
-      padding: 14px;
-      font-size: 18px;
-      border-radius: 6px;
-      border: none;
-      margin-top: 20px;
-    }
-
-    button.search-btn {
-      padding: 14px 22px;
-      font-size: 18px;
-      border: none;
-      border-radius: 6px;
-      background: #a42a0e;
-      color: white;
-      cursor: pointer;
-      margin-left: 8px;
-    }
-
-    button.search-btn:hover {
-      background: #c43c1d;
-    }
-
-    a {
-      color: #a42a0e;
-      text-decoration: none;
-    }
-
-    a:hover {
-      color: #c43c1d;
+      max-width: 100%;
     }
   </style>
 </head>
-<body>
+<body class="home-page">
+  <div class="home-account-wrap">
+    <div class="account-bar" id="account-bar"></div>
+  </div>
 
-  <div class="account-bar" id="account-bar"></div>
-
-  <div class="hero-logo">
-  <img src="/strayparts-logo.png" alt="Stray Parts logo">
-</div>
-
-  <p>Find rare car parts across the internet</p>
-
-  <input id="search" placeholder="Search parts...">
-  <button class="search-btn" onclick="goSearch()">Search</button>
-
-  <hr style="margin:40px auto;width:60%;border:0;border-top:1px solid #d6d1b9;">
-
-  <footer style="margin-top:80px;padding:30px 20px;border-top:1px solid #d6d1b9;text-align:center;">
-    <p style="color:#666;font-size:14px;margin-bottom:14px;">
-      Stray Parts searches marketplaces like eBay, Facebook Marketplace and Yahoo Auctions to help enthusiasts find rare car parts faster.
-    </p>
-
-    <div style="margin-bottom:12px;">
-      <a href="/" style="margin:0 10px;">Home</a>
-      <a href="/about.html" style="margin:0 10px;">About</a>
-      <a href="/contact.html" style="margin:0 10px;">Contact</a>
-      <a href="/privacy.html" style="margin:0 10px;">Privacy</a>
-      <a href="/pricing.html" style="margin:0 10px;">Pricing</a>
+  <main class="home-hero">
+    <div class="hero-logo">
+      <img src="/strayparts-logo.png" alt="Stray Parts logo">
     </div>
 
-    <p style="color:#888;font-size:13px;margin:0;">
-      © Stray Parts
-    </p>
-  </footer>
+    <p class="home-tagline">Find rare car parts across the internet</p>
+
+    <div class="search-wrap home-search">
+      <input id="search" class="search-input" placeholder="Search parts...">
+      <button class="search-btn" onclick="goSearch()">Search</button>
+    </div>
+  </main>
+
+  <hr class="divider">
+
+  <div id="site-footer"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/site.js"></script>
   <script>
-    const SUPABASE_URL = "https://gapajajlaerwfuqrdboz.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGFqYWpsYWVyd2Z1cXJkYm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMjI5ODIsImV4cCI6MjA4ODU5ODk4Mn0.sQ_WUObhZLHIPpEvO7lUjysHw58hNn_Pw6c4dft9hi8";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
     function goSearch() {
       const query = document.getElementById("search").value.trim();
       if (!query) return;
       window.location.href = "/search.html?q=" + encodeURIComponent(query);
     }
 
-    async function loadAccountBar() {
-      const accountBar = document.getElementById("account-bar");
-      if (!accountBar) return;
-
-      const { data: authData } = await supabaseClient.auth.getUser();
-      const user = authData.user;
-
-      if (user) {
-        accountBar.innerHTML = `
-          <a href="/saved.html">Saved Listings</a>
-          <a href="/alerts.html">Alerts</a>
-          <button onclick="logOut()">Log Out</button>
-        `;
-      } else {
-        accountBar.innerHTML = `
-          <a href="/login.html">Log In</a>
-          <a href="/signup.html">Sign Up</a>
-        `;
-      }
-    }
-
-    async function logOut() {
-      await supabaseClient.auth.signOut();
-      window.location.href = "/";
-    }
-
     loadAccountBar();
+    mountSiteFooter();
+
+    document.getElementById("search").addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        goSearch();
+      }
+    });
   </script>
 </body>
 </html>
