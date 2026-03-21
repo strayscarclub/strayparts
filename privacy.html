@@ -4,45 +4,134 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Privacy Policy - Stray Parts</title>
+  <link rel="stylesheet" href="/site.css" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0f0f0f;
-      color: white;
+    .content-page {
       max-width: 800px;
       margin: 0 auto;
-      padding: 60px 20px;
-      line-height: 1.7;
     }
-    h1, h2 {
-      color: white;
+
+    .content-page .hero {
+      margin-bottom: 34px;
     }
-    a {
-      color: #a42a0e;
+
+    .content-copy {
+      color: #555;
+      line-height: 1.8;
+      font-size: 16px;
     }
-    p, li {
-      color: #c0c0c0;
+
+    .content-copy h2 {
+      color: #222;
+      font-size: 24px;
+      margin: 34px 0 10px;
+    }
+
+    .content-copy p,
+    .content-copy li {
+      margin: 0 0 18px;
+    }
+
+    .content-copy ul {
+      margin: 0 0 18px 22px;
+      padding: 0;
     }
   </style>
 </head>
 <body>
-  <h1>Privacy Policy</h1>
+  <div class="page">
+    <div class="topbar">
+      <div class="logo-wrap">
+        <a href="/">
+          <img src="/strayparts-logo.png" alt="Stray Parts logo">
+        </a>
+      </div>
 
-  <p>Stray Parts helps users search for car parts across third-party marketplaces and websites.</p>
+      <div class="account-bar" id="account-bar"></div>
+    </div>
 
-  <h2>Information We Collect</h2>
-  <p>We may collect basic usage data such as pages visited, searches performed, and device/browser information to improve the website.</p>
+    <main class="content-page">
+      <div class="hero">
+        <h1>Privacy Policy</h1>
+        <p class="subtext">How Stray Parts collects, uses and handles your information.</p>
+      </div>
 
-  <h2>Affiliate Links</h2>
-  <p>Some links on Stray Parts may be affiliate links. This means we may earn a commission if you click a link and make a purchase on a third-party website.</p>
+      <div class="content-copy">
+        <p>
+          Stray Parts helps users search for car parts across third-party marketplaces and websites. This page explains what information we may collect, how it is used and what to expect when using the site.
+        </p>
 
-  <h2>Third-Party Websites</h2>
-  <p>Stray Parts links to third-party websites such as eBay, Facebook Marketplace, and Yahoo Auctions. We are not responsible for the content, policies, or transactions on those websites.</p>
+        <h2>Information We Collect</h2>
+        <p>
+          Depending on how you use Stray Parts, we may collect information such as:
+        </p>
+        <ul>
+          <li>account details such as your email address</li>
+          <li>searches performed on the site</li>
+          <li>saved listings and alerts you create</li>
+          <li>basic technical information such as browser, device and general usage data</li>
+        </ul>
 
-  <h2>Cookies and Analytics</h2>
-  <p>We may use basic analytics or cookies to understand how visitors use the site and improve the experience.</p>
+        <h2>How We Use Information</h2>
+        <p>
+          We use information collected through Stray Parts to operate and improve the site, provide account features, deliver alert emails, process subscriptions, and improve search results and user experience.
+        </p>
 
-  <h2>Contact</h2>
-  <p>For questions about this policy, please contact us when contact details are published on this site.</p>
+        <h2>Payments</h2>
+        <p>
+          Paid subscriptions are processed through Stripe. Stray Parts does not store your full payment card details on its own servers. Payment information is handled by Stripe according to their own terms and privacy practices.
+        </p>
+
+        <h2>Emails and Alerts</h2>
+        <p>
+          If you create alerts or sign up for an account, we may send service-related emails such as alert digests, account updates or important notices related to your subscription or use of the site.
+        </p>
+
+        <h2>Smart Search</h2>
+        <p>
+          Some paid features use AI tools to help clean up, interpret or improve listing search results. Search terms and listing data may be processed for this purpose as part of delivering those features.
+        </p>
+
+        <h2>Affiliate Links</h2>
+        <p>
+          Some links on Stray Parts may be affiliate links. This means we may earn a commission if you click through and make a purchase on a third-party website.
+        </p>
+
+        <h2>Third-Party Websites</h2>
+        <p>
+          Stray Parts links to third-party websites such as eBay, Facebook Marketplace, Yahoo Auctions and Up Garage. We are not responsible for the content, policies or transactions on those websites. Your use of those websites is subject to their own terms and privacy policies.
+        </p>
+
+        <h2>Cookies and Analytics</h2>
+        <p>
+          We may use basic cookies, analytics or similar tools to understand how visitors use the site, keep users signed in and improve performance and usability.
+        </p>
+
+        <h2>Data Retention</h2>
+        <p>
+          We keep account and usage information for as long as needed to operate the service, meet legal obligations, resolve disputes and maintain reasonable business records.
+        </p>
+
+        <h2>Changes to This Policy</h2>
+        <p>
+          This privacy policy may be updated from time to time as Stray Parts develops. Continued use of the site after changes are published means the updated policy will apply.
+        </p>
+
+        <h2>Contact</h2>
+        <p>
+          If you have questions about this privacy policy, please use the Feedback page on this site.
+        </p>
+      </div>
+    </main>
+
+    <div id="site-footer"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/site.js"></script>
+  <script>
+    loadAccountBar();
+    mountSiteFooter();
+  </script>
 </body>
 </html>
