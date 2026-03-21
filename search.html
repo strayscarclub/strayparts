@@ -4,383 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Search Parts - Stray Parts</title>
-  <style>
-    :root {
-      --bg: #ede8d0;
-      --text: #222;
-      --muted: #666;
-      --muted-light: #888;
-      --border: #d6d1b9;
-      --brand: #a42a0e;
-      --brand-hover: #c43c1d;
-      --pill: #d6d1b9;
-      --pill-hover: #cfc8aa;
-      --card: #1b1b1b;
-      --card-soft: #2a2a2a;
-      --card-text: #fff;
-      --card-muted: #aaa;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      margin: 0;
-      min-height: 100vh;
-    }
-
-    .page {
-      max-width: 1120px;
-      margin: 0 auto;
-      padding: 24px 20px 80px;
-    }
-
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 20px;
-      margin-bottom: 48px;
-    }
-
-    .logo-wrap img {
-      height: 72px;
-      width: auto;
-      display: block;
-    }
-
-    .account-bar {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .account-bar a,
-    .account-bar button {
-      background: none;
-      border: none;
-      color: var(--brand);
-      font-size: 15px;
-      text-decoration: none;
-      cursor: pointer;
-      padding: 0;
-      margin: 0;
-    }
-
-    .account-bar a:hover,
-    .account-bar button:hover {
-      color: var(--brand-hover);
-    }
-
-    .hero {
-      max-width: 760px;
-      margin: 0 auto;
-      text-align: center;
-    }
-
-    h1 {
-      margin: 0 0 10px;
-      font-size: 36px;
-      line-height: 1.1;
-    }
-
-    .hero p {
-      color: #555;
-      margin: 0;
-      font-size: 16px;
-    }
-
-    .search-wrap {
-      margin-top: 30px;
-      display: flex;
-      justify-content: center;
-      align-items: stretch;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    input[type="text"] {
-      width: 420px;
-      max-width: 100%;
-      padding: 14px;
-      font-size: 18px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      outline: none;
-      background: #fff;
-    }
-
-    button {
-      padding: 14px 20px;
-      font-size: 18px;
-      border: none;
-      background: var(--brand);
-      color: white;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.2s ease;
-    }
-
-    button:hover {
-      background: var(--brand-hover);
-    }
-
-    .secondary-btn {
-      background: #2a2a2a;
-      color: white;
-    }
-
-    .secondary-btn:hover {
-      background: #3a3a3a;
-    }
-
-    .divider {
-      margin: 40px auto;
-      width: min(680px, 100%);
-      border: 0;
-      border-top: 1px solid var(--border);
-    }
-
-    .results {
-      margin-top: 10px;
-      max-width: 1000px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-start;
-      flex-wrap: wrap;
-      margin: 0 0 24px 0;
-    }
-
-    .tab-btn {
-      background: var(--pill);
-      color: var(--text);
-      border: none;
-      border-radius: 999px;
-      padding: 10px 16px;
-      font-size: 14px;
-      cursor: pointer;
-      margin: 0;
-    }
-
-    .tab-btn:hover {
-      background: var(--pill-hover);
-    }
-
-    .tab-btn.active {
-      background: var(--brand);
-      color: white;
-    }
-
-    .tab-panel {
-      display: none;
-    }
-
-    .tab-panel.active {
-      display: block;
-    }
-
-    .section-title {
-      text-align: left;
-      font-size: 22px;
-      margin: 30px 0 12px 0;
-    }
-
-    .card {
-      background: var(--card);
-      border-radius: 14px;
-      padding: 16px;
-      margin: 14px 0;
-      display: flex;
-      gap: 16px;
-      align-items: flex-start;
-      text-align: left;
-    }
-
-    .thumb {
-      width: 120px;
-      height: 120px;
-      border-radius: 10px;
-      background: var(--card-soft);
-      flex-shrink: 0;
-      object-fit: cover;
-      display: block;
-    }
-
-    .content {
-      flex: 1;
-    }
-
-    .title {
-      font-size: 19px;
-      font-weight: bold;
-      margin: 0 0 10px 0;
-      line-height: 1.4;
-      color: var(--card-text);
-    }
-
-    .price {
-      font-size: 20px;
-      font-weight: bold;
-      margin-bottom: 10px;
-      color: var(--card-text);
-    }
-
-    .meta {
-      color: var(--card-muted);
-      font-size: 14px;
-      margin-bottom: 12px;
-      line-height: 1.5;
-    }
-
-    .card a {
-      color: var(--brand);
-      text-decoration: none;
-      font-weight: bold;
-    }
-
-    .card a:hover {
-      color: var(--brand-hover);
-    }
-
-    .source-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 14px;
-      margin-top: 18px;
-    }
-
-    .source-card {
-      background: var(--card);
-      border-radius: 14px;
-      padding: 18px;
-      text-align: left;
-      color: white;
-    }
-
-    .source-card h3 {
-      margin-top: 0;
-      margin-bottom: 10px;
-    }
-
-    .source-card a {
-      color: var(--brand);
-      text-decoration: none;
-      font-weight: bold;
-    }
-
-    .source-card a:hover {
-      color: var(--brand-hover);
-    }
-
-    .muted {
-      color: var(--card-muted);
-      font-size: 14px;
-    }
-
-    .checkbox-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      margin: 14px 0;
-      color: #ddd;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .checkbox-row input {
-      margin-top: 3px;
-      flex-shrink: 0;
-    }
-
-    .inline-actions {
-      margin-top: 12px;
-    }
-
-    footer {
-      margin-top: 80px;
-      padding: 30px 20px 10px;
-      border-top: 1px solid var(--border);
-      text-align: center;
-    }
-
-    .footer-copy {
-      color: var(--muted);
-      font-size: 14px;
-      margin: 0 auto 14px;
-      max-width: 760px;
-      line-height: 1.6;
-    }
-
-    .footer-nav {
-      margin-bottom: 12px;
-    }
-
-    .footer-nav a {
-      color: var(--brand);
-      text-decoration: none;
-      margin: 0 10px;
-      display: inline-block;
-    }
-
-    .footer-nav a:hover {
-      color: var(--brand-hover);
-    }
-
-    .footer-meta {
-      color: var(--muted-light);
-      font-size: 13px;
-      margin: 0;
-    }
-
-    @media (max-width: 760px) {
-      .topbar {
-        flex-direction: column;
-        align-items: flex-start;
-        margin-bottom: 30px;
-      }
-
-      .account-bar {
-        justify-content: flex-start;
-      }
-
-      h1 {
-        font-size: 30px;
-      }
-
-      .search-wrap {
-        flex-direction: column;
-      }
-
-      .search-wrap input,
-      .search-wrap button {
-        width: 100%;
-      }
-
-      .card {
-        flex-direction: column;
-      }
-
-      .thumb {
-        width: 100%;
-        height: 220px;
-      }
-
-      .footer-nav a {
-        margin: 6px 10px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="/site.css" />
 </head>
 <body>
   <div class="page">
@@ -399,7 +23,7 @@
       <p>Search multiple marketplaces for rare car parts</p>
 
       <div class="search-wrap">
-        <input id="query" type="text" placeholder="Search car parts..." />
+        <input id="query" class="search-input" type="text" placeholder="Search car parts..." />
         <button onclick="searchParts()">Search</button>
       </div>
     </div>
@@ -408,70 +32,15 @@
 
     <div class="results" id="results"></div>
 
-    <footer>
-      <p class="footer-copy">
-        Stray Parts searches marketplaces like eBay, Facebook Marketplace and Yahoo Auctions to help enthusiasts find rare car parts faster.
-      </p>
-
-      <div class="footer-nav">
-        <a href="/">Home</a>
-        <a href="/about.html">About</a>
-        <a href="/feedback.html">Feedback</a>
-        <a href="/privacy.html">Privacy</a>
-        <a href="/pricing.html">Pricing</a>
-      </div>
-
-      <p class="footer-meta">© Stray Parts</p>
-    </footer>
+    <div id="site-footer"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/site.js"></script>
   <script>
-    const SUPABASE_URL = "https://gapajajlaerwfuqrdboz.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGFqYWpsYWVyd2Z1cXJkYm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMjI5ODIsImV4cCI6MjA4ODU5ODk4Mn0.sQ_WUObhZLHIPpEvO7lUjysHw58hNn_Pw6c4dft9hi8";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
     let currentUser = null;
     let currentPlan = "free";
     let upgarageAcknowledged = false;
-
-    async function loadAccountBar() {
-      const accountBar = document.getElementById("account-bar");
-      if (!accountBar) return;
-
-      const { data: authData } = await supabaseClient.auth.getUser();
-      const user = authData.user;
-      currentUser = user || null;
-
-      if (user) {
-        const { data: profile } = await supabaseClient
-          .from("profiles")
-          .select("plan, upgarage_acknowledged")
-          .eq("id", user.id)
-          .single();
-
-        currentPlan = profile?.plan || "free";
-        upgarageAcknowledged = !!profile?.upgarage_acknowledged;
-
-        accountBar.innerHTML = `
-          <a href="/my-garage.html">My Garage</a>
-          <button onclick="logOut()">Log Out</button>
-        `;
-      } else {
-        currentPlan = "free";
-        upgarageAcknowledged = localStorage.getItem("upgarage_acknowledged") === "true";
-
-        accountBar.innerHTML = `
-          <a href="/login.html">Log In</a>
-          <a href="/signup.html">Sign Up</a>
-        `;
-      }
-    }
-
-    async function logOut() {
-      await supabaseClient.auth.signOut();
-      window.location.href = "/";
-    }
 
     async function searchParts() {
       const input = document.getElementById("query");
@@ -501,7 +70,22 @@
         </div>
       `;
 
-      await loadAccountBar();
+      const user = await loadAccountBar();
+      currentUser = user || null;
+
+      if (currentUser) {
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("plan, upgarage_acknowledged")
+          .eq("id", currentUser.id)
+          .single();
+
+        currentPlan = profile?.plan || "free";
+        upgarageAcknowledged = !!profile?.upgarage_acknowledged;
+      } else {
+        currentPlan = "free";
+        upgarageAcknowledged = localStorage.getItem("upgarage_acknowledged") === "true";
+      }
 
       let ebayHtml = "";
       let upgarageHtml = "";
@@ -816,8 +400,7 @@
         return;
       }
 
-      const { data: authData } = await supabaseClient.auth.getUser();
-      const user = authData.user;
+      const user = await getCurrentUser();
 
       if (!user) {
         localStorage.setItem("upgarage_acknowledged", "true");
@@ -841,8 +424,7 @@
     }
 
     async function saveListing(title, itemUrl, imageUrl, price, marketplace) {
-      const { data: authData } = await supabaseClient.auth.getUser();
-      const user = authData.user;
+      const user = await getCurrentUser();
 
       if (!user) {
         window.location.href = "/login.html";
@@ -922,32 +504,26 @@
       alert("Listing saved.");
     }
 
-    function escapeHtml(str) {
-      return String(str || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
+    async function initSearchPage() {
+      await loadAccountBar();
+      mountSiteFooter();
 
-    function escapeJs(str) {
-      return String(str || "")
-        .replace(/\\/g, "\\\\")
-        .replace(/'/g, "\\'")
-        .replace(/"/g, '\\"')
-        .replace(/\n/g, " ");
-    }
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get("q");
 
-    const params = new URLSearchParams(window.location.search);
-    const q = params.get("q");
-
-    loadAccountBar().then(() => {
       if (q) {
         document.getElementById("query").value = q;
         searchParts();
       }
-    });
+
+      document.getElementById("query").addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+          searchParts();
+        }
+      });
+    }
+
+    initSearchPage();
   </script>
 </body>
 </html>
