@@ -64,7 +64,7 @@ module.exports = async function handler(req, res) {
       })
     );
 
-    const merged = dedupeEbayItems(resultSets.flat()).slice(0, 18);
+    const merged = dedupeEbayItems(resultSets.flat()).slice(0, 12);
 
     return res.status(200).json({
       source: "ebay",
