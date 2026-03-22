@@ -50,7 +50,7 @@ module.exports = async function handler(req, res) {
       alternateItems = alternateResults.flat();
     }
 
-    let items = dedupeItems([...baseItems, ...alternateItems]).slice(0, 18);
+    let items = dedupeItems([...baseItems, ...alternateItems]).slice(0, 12);
 
     items = await normalizeListings({
       source: "Yahoo Auctions",
