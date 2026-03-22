@@ -31,20 +31,20 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    const searchPageItems = extractYahooSearchItems(html);
+    const itemUrls = extractYahooItemUrls(html);
 
     if (debug) {
       return res.status(200).json({
         source: "yahooauctions",
         query,
         search_url: searchUrl,
-        extracted_count: searchPageItems.length,
-        items_preview: searchPageItems.slice(0, 5),
+        item_url_count: itemUrls.length,
+        item_urls: itemUrls.slice(0, 10),
         html_preview: html.slice(0, 3000)
       });
     }
 
-    if (searchPageItems.length === 0) {
+    if (itemUrls.length === 0) {
       return res.status(200).json({
         source: "yahooauctions",
         query,
@@ -53,31 +53,19 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // Keep the list tight for speed.
-    const limitedItems = searchPageItems.slice(0, 12);
+    // Slightly lower than before for speed.
+    const limitedUrls = itemUrls.slice(0, 10);
 
-    // Only fetch detail pages for incomplete items, and cap concurrency.
-    const completedItems = await mapWithConcurrency(
-      limitedItems,
-      4,
-      async (item) => {
-        if (isSearchItemComplete(item)) {
-          return finalizeYahooItem(item);
-        }
-
-        try {
-          const detailItem = await fetchYahooAuctionItem(item.item_url);
-          return finalizeYahooItem({
-            ...item,
-            ...detailItem
-          });
-        } catch (error) {
-          return finalizeYahooItem(item);
-        }
+    // Controlled concurrency instead of hammering all at once.
+    const itemResults = await mapWithConcurrency(limitedUrls, 4, async (url) => {
+      try {
+        return await fetchYahooAuctionItem(url);
+      } catch (error) {
+        return null;
       }
-    );
+    });
 
-    let items = completedItems.filter(Boolean);
+    let items = itemResults.filter(Boolean);
 
     items = await normalizeListings({
       source: "Yahoo Auctions",
@@ -100,92 +88,20 @@ module.exports = async function handler(req, res) {
   }
 };
 
-function extractYahooSearchItems(html) {
-  const $ = cheerio.load(html);
-  const results = [];
-  const seen = new Set();
+function extractYahooItemUrls(html) {
+  const urls = new Set();
 
-  // Look for links to auction items and build items from the nearest result block.
-  $('a[href*="/jp/auction/"]').each((_, el) => {
-    const href = $(el).attr("href") || "";
-    const itemUrl = absolutizeYahooAuctionUrl(href);
+  const absoluteMatches =
+    html.match(/https:\/\/page\.auctions\.yahoo\.co\.jp\/jp\/auction\/[a-zA-Z0-9]+/g) || [];
+  absoluteMatches.forEach((url) => urls.add(cleanUrl(url)));
 
-    if (!itemUrl || seen.has(itemUrl)) return;
-
-    const card = findLikelyResultCard($, el);
-    const title = extractTitleFromCard($, el, card);
-    const imageUrl = extractImageFromCard($, el, card);
-    const cardText = cleanText(card.text() || "");
-
-    const item = {
-      title: cleanTitle(title),
-      item_url: itemUrl,
-      image_url: absolutize(imageUrl),
-      price: formatYahooPrice(extractPrice(cardText)),
-      shipping: cleanShipping(extractShipping(cardText)),
-      time_left: cleanTimeLeft(extractTimeLeft(cardText)),
-      marketplace: "Yahoo Auctions"
-    };
-
-    // Only keep results that at least look like real auction items.
-    if (item.title || item.price || item.image_url) {
-      seen.add(itemUrl);
-      results.push(item);
-    }
+  const relativeMatches =
+    html.match(/\/jp\/auction\/[a-zA-Z0-9]+/g) || [];
+  relativeMatches.forEach((url) => {
+    urls.add(cleanUrl(`https://page.auctions.yahoo.co.jp${url}`));
   });
 
-  return results;
-}
-
-function findLikelyResultCard($, el) {
-  const candidates = [
-    $(el).closest("li"),
-    $(el).closest("article"),
-    $(el).closest("section"),
-    $(el).closest("div")
-  ];
-
-  for (const candidate of candidates) {
-    const text = cleanText(candidate.text() || "");
-    if (candidate.length && text.length > 20) {
-      return candidate;
-    }
-  }
-
-  return $(el).parent();
-}
-
-function extractTitleFromCard($, el, card) {
-  const linkText = cleanText($(el).text() || "");
-  if (linkText && linkText.length > 4) return linkText;
-
-  const headings = [
-    card.find("h1").first().text(),
-    card.find("h2").first().text(),
-    card.find("h3").first().text(),
-    card.find('[class*="title"]').first().text()
-  ];
-
-  for (const value of headings) {
-    const clean = cleanText(value || "");
-    if (clean) return clean;
-  }
-
-  return "";
-}
-
-function extractImageFromCard($, el, card) {
-  const img =
-    card.find('img[src]').first().attr("src") ||
-    card.find('img[data-src]').first().attr("data-src") ||
-    $(el).find('img[src]').first().attr("src") ||
-    "";
-
-  return img;
-}
-
-function isSearchItemComplete(item) {
-  return !!(item.title && item.price && item.image_url);
+  return Array.from(urls);
 }
 
 async function fetchYahooAuctionItem(itemUrl) {
@@ -213,32 +129,23 @@ async function fetchYahooAuctionItem(itemUrl) {
 
   const bodyText = cleanText($("body").text());
 
+  const price = formatYahooPrice(extractPrice(bodyText)) || "Price not available";
+  const shipping = cleanShipping(extractShipping(bodyText)) || "";
+  const timeLeft = cleanTimeLeft(extractTimeLeft(bodyText)) || "";
+
   return {
     title: cleanTitle(title),
     item_url: itemUrl,
     image_url: absolutize(imageUrl),
-    price: formatYahooPrice(extractPrice(bodyText)),
-    shipping: cleanShipping(extractShipping(bodyText)),
-    time_left: cleanTimeLeft(extractTimeLeft(bodyText)),
-    marketplace: "Yahoo Auctions"
-  };
-}
-
-function finalizeYahooItem(item) {
-  return {
-    title: cleanTitle(item.title || ""),
-    item_url: item.item_url || "",
-    image_url: absolutize(item.image_url || ""),
-    price: formatYahooPrice(item.price || "") || "Price not available",
-    shipping: cleanShipping(item.shipping || ""),
-    time_left: cleanTimeLeft(item.time_left || ""),
+    price,
+    shipping,
+    time_left: timeLeft,
     marketplace: "Yahoo Auctions"
   };
 }
 
 function extractPrice(text) {
   if (!text) return "";
-
   return (
     text.match(/現在\s*価格\s*[\d,]+円/)?.[0] ||
     text.match(/現在\s*[\d,]+円/)?.[0] ||
@@ -251,10 +158,8 @@ function extractPrice(text) {
 
 function formatYahooPrice(raw) {
   if (!raw) return "";
-
   const numeric = String(raw).match(/[\d,]+/);
   if (!numeric) return "";
-
   return `¥${numeric[0]}`;
 }
 
@@ -337,13 +242,6 @@ function cleanTitle(str) {
 
 function cleanText(str) {
   return String(str || "").replace(/\s+/g, " ").trim();
-}
-
-function absolutizeYahooAuctionUrl(url) {
-  if (!url) return "";
-  if (url.startsWith("https://page.auctions.yahoo.co.jp/jp/auction/")) return cleanUrl(url);
-  if (url.startsWith("/jp/auction/")) return cleanUrl(`https://page.auctions.yahoo.co.jp${url}`);
-  return "";
 }
 
 function cleanUrl(url) {
