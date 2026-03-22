@@ -3,6 +3,7 @@ const normalizeListings = require("../lib/normalize-listings");
 module.exports = async function handler(req, res) {
   const query = (req.query.q || "").trim();
   const smart = req.query.smart === "1";
+  const matchMode = req.query.match === "broad" ? "broad" : "exact";
 
   if (!query) {
     return res.status(400).json({ error: "Missing query" });
@@ -70,12 +71,14 @@ module.exports = async function handler(req, res) {
       source: "Up Garage",
       query,
       items,
-      shouldNormalize: smart
+      shouldNormalize: smart,
+      matchMode
     });
 
     return res.status(200).json({
       source: "upgarage",
       query,
+      match_mode: matchMode,
       count: items.length,
       items
     });
