@@ -1,65 +1,599 @@
-export default async function handler(req, res) {
-  const query = (req.query.q || "").trim();
-  const matchMode = req.query.match === "broad" ? "broad" : "exact";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Search Parts - Stray Parts</title>
+  <link rel="stylesheet" href="/site.css" />
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div class="logo-wrap">
+        <a href="/">
+          <img src="/strayparts-logo.png" alt="Stray Parts logo">
+        </a>
+      </div>
 
-  if (!query) {
-    return res.status(400).json({ error: "Missing query" });
-  }
+      <div class="account-bar" id="account-bar"></div>
+    </div>
 
-  try {
-    const auth = Buffer.from(
-      process.env.EBAY_CLIENT_ID + ":" + process.env.EBAY_CLIENT_SECRET
-    ).toString("base64");
+    <div class="hero">
+      <h1>Search Parts</h1>
+      <p>Search multiple marketplaces for rare car parts</p>
 
-    const tokenRes = await fetch(
-      "https://api.ebay.com/identity/v1/oauth2/token",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "Authorization": "Basic " + auth
-        },
-        body: "grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope"
-      }
-    );
+      <div class="search-wrap">
+        <input id="query" class="search-input" type="text" placeholder="Search car parts..." />
+        <button onclick="searchParts()">Search</button>
+      </div>
+    </div>
 
-    const tokenData = await tokenRes.json();
+    <hr class="divider" />
 
-    if (!tokenRes.ok || !tokenData.access_token) {
-      return res.status(500).json({
-        error: "Failed to get eBay access token",
-        details: tokenData
-      });
+    <div class="results" id="results"></div>
+
+    <div id="site-footer"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/site.js"></script>
+  <script>
+    let currentUser = null;
+    let currentPlan = "free";
+    let upgarageAcknowledged = false;
+    let latestSearchId = 0;
+    let latestQuery = "";
+
+    function isPaidPlan(plan) {
+      return plan === "builder" || plan === "collector";
     }
 
-    const searchRes = await fetch(
-      `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=12`,
-      {
-        headers: {
-          "Authorization": "Bearer " + tokenData.access_token
+    function updateSearchUrl(query) {
+      const params = new URLSearchParams();
+
+      if (query) {
+        params.set("q", query);
+      }
+
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState({}, "", newUrl);
+    }
+
+    async function loadSearchContext() {
+      currentUser = await getCurrentUser();
+
+      if (currentUser) {
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("plan, upgarage_acknowledged")
+          .eq("id", currentUser.id)
+          .single();
+
+        currentPlan = profile?.plan || "free";
+        upgarageAcknowledged = !!profile?.upgarage_acknowledged;
+      } else {
+        currentPlan = "free";
+        upgarageAcknowledged = localStorage.getItem("upgarage_acknowledged") === "true";
+      }
+    }
+
+    function renderLoadingCard(query) {
+      return `
+        <div class="card">
+          <div class="content">
+            <div class="title">Searching...</div>
+            <p class="muted">Looking for <strong>${escapeHtml(query)}</strong></p>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderResultsShell(query) {
+      const results = document.getElementById("results");
+
+      results.innerHTML = `
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="all" onclick="switchTab('all', this)">All</button>
+          <button class="tab-btn" data-tab="ebay" onclick="switchTab('ebay', this)">eBay</button>
+          <button class="tab-btn" data-tab="upgarage" onclick="switchTab('upgarage', this)">Up Garage</button>
+          <button class="tab-btn" data-tab="yahoo" onclick="switchTab('yahoo', this)">Yahoo Auctions</button>
+        </div>
+
+        <div class="tab-panel active" id="tab-all">
+          <div id="section-ebay">${renderLoadingCard(query)}</div>
+          <div id="section-upgarage">${renderLoadingCard(query)}</div>
+          <div id="section-yahoo">${renderLoadingCard(query)}</div>
+          <div id="section-other">${buildOtherSourcesHtml(query)}</div>
+        </div>
+
+        <div class="tab-panel" id="tab-ebay">
+          <div id="section-ebay-tab">${renderLoadingCard(query)}</div>
+        </div>
+
+        <div class="tab-panel" id="tab-upgarage">
+          <div id="section-upgarage-tab">${renderLoadingCard(query)}</div>
+        </div>
+
+        <div class="tab-panel" id="tab-yahoo">
+          <div id="section-yahoo-tab">${renderLoadingCard(query)}</div>
+        </div>
+      `;
+    }
+
+    function updateSection(sectionKey, html) {
+      const allSection = document.getElementById(`section-${sectionKey}`);
+      const tabSection = document.getElementById(`section-${sectionKey}-tab`);
+
+      if (allSection) allSection.innerHTML = html;
+      if (tabSection) tabSection.innerHTML = html;
+    }
+
+    function buildOtherSourcesHtml(query) {
+      const encodedQuery = encodeURIComponent(query);
+
+      return `
+        <div class="section-title">Other Sources</div>
+        <div class="source-grid">
+          <div class="source-card">
+            <h3>Facebook Marketplace</h3>
+            <p class="muted">Search Marketplace for <strong>${escapeHtml(query)}</strong></p>
+            <a href="https://www.facebook.com/marketplace/search/?query=${encodedQuery}" target="_blank" rel="noopener noreferrer">
+              Search Facebook Marketplace
+            </a>
+          </div>
+
+          <div class="source-card">
+            <h3>Forums & Web Listings</h3>
+            <p class="muted">Search forums and listings related to <strong>${escapeHtml(query)}</strong></p>
+            <a href="https://www.google.com/search?q=${encodedQuery}+car+parts" target="_blank" rel="noopener noreferrer">
+              Search forums & listings
+            </a>
+          </div>
+        </div>
+      `;
+    }
+
+    function buildEbayHtml(ebayData, encodedQuery) {
+      let html = `<div class="section-title">eBay Results</div>`;
+
+      if (ebayData.itemSummaries && ebayData.itemSummaries.length > 0) {
+        ebayData.itemSummaries.forEach((item) => {
+          const title = item.title || "Untitled listing";
+          const rawLink = item.itemWebUrl || "#";
+          const affiliateLink =
+            rawLink +
+            (rawLink.includes("?") ? "&" : "?") +
+            "mkcid=1&mkrid=711-53200-19255-0&siteid=0&campid=5339144348&customid=&toolid=10001&mkevt=1";
+
+          const price = item.price
+            ? `${item.price.value} ${item.price.currency}`
+            : "Price not available";
+
+          const image = item.image && item.image.imageUrl
+            ? item.image.imageUrl
+            : "";
+
+          html += `
+            <div class="card">
+              ${
+                image
+                  ? `<img class="thumb" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">`
+                  : `<div class="thumb"></div>`
+              }
+              <div class="content">
+                <div class="title">${escapeHtml(title)}</div>
+                <div class="price">${escapeHtml(price)}</div>
+                <div class="meta">Marketplace: eBay</div>
+                <a href="${escapeHtml(affiliateLink)}" target="_blank" rel="noopener noreferrer">View on eBay</a>
+                <br><br>
+                <button onclick="saveListing(
+                  '${escapeJs(title)}',
+                  '${escapeJs(affiliateLink)}',
+                  '${escapeJs(image)}',
+                  '${escapeJs(price)}',
+                  'eBay'
+                )">Save Listing</button>
+              </div>
+            </div>
+          `;
+        });
+      } else {
+        html += `
+          <div class="card">
+            <div class="content">
+              <div class="title">No eBay results found</div>
+              <a href="https://www.ebay.com/sch/i.html?_nkw=${encodedQuery}" target="_blank" rel="noopener noreferrer">
+                Search directly on eBay
+              </a>
+            </div>
+          </div>
+        `;
+      }
+
+      return html;
+    }
+
+    function buildUpGarageLockedHtml() {
+      return `
+        <div class="section-title">Up Garage</div>
+        <div class="card">
+          <div class="content">
+            <div class="title">Unlock Up Garage</div>
+            <div class="meta">
+              Up Garage is intended for enthusiasts sourcing parts for personal vehicle use, not resale. By viewing Up Garage results in Stray Parts, you agree to use this source in that spirit.
+            </div>
+            <label class="checkbox-row">
+              <input type="checkbox" id="upgarage-agree-checkbox">
+              <span>I understand and agree.</span>
+            </label>
+            <div class="inline-actions">
+              <button onclick="acknowledgeUpGarage()">Continue to Up Garage results</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function buildUpGarageHtml(upgarageData) {
+      let html = `<div class="section-title">Up Garage Results</div>`;
+
+      if (upgarageData.items && upgarageData.items.length > 0) {
+        upgarageData.items.forEach((item) => {
+          const title = item.display_title || item.title || "Untitled listing";
+          const englishHint = item.english_hint || "";
+          const itemUrl = item.item_url || "#";
+          const price = item.price || "Price not available";
+          const image = item.image_url || "";
+          const shopName = item.shop_name || "";
+          const category = item.category || "";
+          const condition = item.condition || "";
+
+          html += `
+            <div class="card">
+              ${
+                image
+                  ? `<img class="thumb" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">`
+                  : `<div class="thumb"></div>`
+              }
+              <div class="content">
+                <div class="title">${escapeHtml(title)}</div>
+                ${englishHint ? `<div class="meta">${escapeHtml(englishHint)}</div>` : ""}
+                <div class="price">${escapeHtml(price)}</div>
+                <div class="meta">
+                  Marketplace: Up Garage
+                  ${shopName ? ` • Shop: ${escapeHtml(shopName)}` : ""}
+                  ${category ? ` • Category: ${escapeHtml(category)}` : ""}
+                  ${condition ? ` • Condition: ${escapeHtml(condition)}` : ""}
+                </div>
+                <a href="${escapeHtml(itemUrl)}" target="_blank" rel="noopener noreferrer">View on Up Garage</a>
+                <br><br>
+                <button onclick="saveListing(
+                  '${escapeJs(title)}',
+                  '${escapeJs(itemUrl)}',
+                  '${escapeJs(image)}',
+                  '${escapeJs(price)}',
+                  'Up Garage'
+                )">Save Listing</button>
+              </div>
+            </div>
+          `;
+        });
+      } else {
+        html += `
+          <div class="card">
+            <div class="content">
+              <div class="title">No Up Garage results found</div>
+            </div>
+          </div>
+        `;
+      }
+
+      return html;
+    }
+
+    function buildYahooHtml(yahooData, encodedQuery) {
+      let html = `<div class="section-title">Yahoo Auctions Results</div>`;
+
+      if (yahooData.items && yahooData.items.length > 0) {
+        yahooData.items.forEach((item) => {
+          const title = item.display_title || item.title || "Untitled listing";
+          const englishHint = item.english_hint || "";
+          const itemUrl = item.item_url || "#";
+          const price = item.price || "Price not available";
+          const image = item.image_url || "";
+          const shipping = item.shipping || "";
+          const timeLeft = item.time_left || "";
+
+          html += `
+            <div class="card">
+              ${
+                image
+                  ? `<img class="thumb" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">`
+                  : `<div class="thumb"></div>`
+              }
+              <div class="content">
+                <div class="title">${escapeHtml(title)}</div>
+                ${englishHint ? `<div class="meta">${escapeHtml(englishHint)}</div>` : ""}
+                <div class="price">${escapeHtml(price)}</div>
+                <div class="meta">
+                  Marketplace: Yahoo Auctions
+                  ${shipping ? ` • ${escapeHtml(shipping)}` : ""}
+                  ${timeLeft ? ` • ${escapeHtml(timeLeft)}` : ""}
+                </div>
+                <a href="${escapeHtml(itemUrl)}" target="_blank" rel="noopener noreferrer">View on Yahoo Auctions</a>
+                <br><br>
+                <button onclick="saveListing(
+                  '${escapeJs(title)}',
+                  '${escapeJs(itemUrl)}',
+                  '${escapeJs(image)}',
+                  '${escapeJs(price)}',
+                  'Yahoo Auctions'
+                )">Save Listing</button>
+              </div>
+            </div>
+          `;
+        });
+      } else {
+        html += `
+          <div class="card">
+            <div class="content">
+              <div class="title">No Yahoo Auctions results found</div>
+              <a href="https://auctions.yahoo.co.jp/search/search/${encodedQuery}/0/" target="_blank" rel="noopener noreferrer">
+                Search directly on Yahoo Auctions
+              </a>
+            </div>
+          </div>
+        `;
+      }
+
+      return html;
+    }
+
+    function buildErrorHtml(titleText) {
+      return `
+        <div class="section-title">${titleText}</div>
+        <div class="card">
+          <div class="content">
+            <div class="title">Could not load results</div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function fetchEbay(encodedQuery, searchId) {
+      try {
+        const response = await fetch(`/api/ebay?q=${encodedQuery}`);
+        const data = await response.json();
+
+        if (searchId !== latestSearchId) return;
+        updateSection("ebay", buildEbayHtml(data, encodedQuery));
+      } catch (error) {
+        if (searchId !== latestSearchId) return;
+        updateSection("ebay", buildErrorHtml("eBay Results"));
+      }
+    }
+
+    async function fetchUpGarage(encodedQuery, searchId) {
+      if (!upgarageAcknowledged) {
+        updateSection("upgarage", buildUpGarageLockedHtml());
+        return;
+      }
+
+      try {
+        const upgarageUrl =
+          isPaidPlan(currentPlan)
+            ? `/api/upgarage?q=${encodedQuery}&smart=1`
+            : `/api/upgarage?q=${encodedQuery}`;
+
+        const response = await fetch(upgarageUrl);
+        const data = await response.json();
+
+        if (searchId !== latestSearchId) return;
+        updateSection("upgarage", buildUpGarageHtml(data));
+      } catch (error) {
+        if (searchId !== latestSearchId) return;
+        updateSection("upgarage", buildErrorHtml("Up Garage Results"));
+      }
+    }
+
+    async function fetchYahoo(encodedQuery, searchId) {
+      try {
+        const yahooUrl =
+          isPaidPlan(currentPlan)
+            ? `/api/yahooauctions?q=${encodedQuery}&smart=1`
+            : `/api/yahooauctions?q=${encodedQuery}`;
+
+        const response = await fetch(yahooUrl);
+        const data = await response.json();
+
+        if (searchId !== latestSearchId) return;
+        updateSection("yahoo", buildYahooHtml(data, encodedQuery));
+      } catch (error) {
+        if (searchId !== latestSearchId) return;
+        updateSection("yahoo", buildErrorHtml("Yahoo Auctions Results"));
+      }
+    }
+
+    async function searchParts() {
+      const input = document.getElementById("query");
+      const query = input.value.trim();
+
+      if (!query) {
+        document.getElementById("results").innerHTML = `
+          <div class="card">
+            <div class="content">
+              <div class="title">Enter a search term</div>
+              <p>Try something like: GC8 seats, WRX turbo, BBS wheels 5x100</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      latestQuery = query;
+      latestSearchId += 1;
+
+      const searchId = latestSearchId;
+      const encodedQuery = encodeURIComponent(query);
+
+      updateSearchUrl(query);
+      renderResultsShell(query);
+
+      fetchEbay(encodedQuery, searchId);
+      fetchUpGarage(encodedQuery, searchId);
+      fetchYahoo(encodedQuery, searchId);
+    }
+
+    function switchTab(tabName, btn) {
+      document.querySelectorAll(".tab-panel").forEach(panel => {
+        panel.classList.remove("active");
+      });
+
+      document.querySelectorAll(".tab-btn").forEach(tab => {
+        tab.classList.remove("active");
+      });
+
+      const panel = document.getElementById("tab-" + tabName);
+      if (panel) panel.classList.add("active");
+      if (btn) btn.classList.add("active");
+    }
+
+    async function acknowledgeUpGarage() {
+      const checkbox = document.getElementById("upgarage-agree-checkbox");
+
+      if (!checkbox || !checkbox.checked) {
+        alert("Please tick the checkbox to continue.");
+        return;
+      }
+
+      const user = await getCurrentUser();
+
+      if (!user) {
+        localStorage.setItem("upgarage_acknowledged", "true");
+        upgarageAcknowledged = true;
+        if (latestQuery) searchParts();
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from("profiles")
+        .update({ upgarage_acknowledged: true })
+        .eq("id", user.id);
+
+      if (error) {
+        alert("Could not save your acknowledgement.");
+        return;
+      }
+
+      upgarageAcknowledged = true;
+      if (latestQuery) searchParts();
+    }
+
+    async function saveListing(title, itemUrl, imageUrl, price, marketplace) {
+      const user = await getCurrentUser();
+
+      if (!user) {
+        window.location.href = "/login.html";
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabaseClient
+        .from("profiles")
+        .select("plan")
+        .eq("id", user.id)
+        .single();
+
+      if (profileError) {
+        alert("Could not load your account plan.");
+        return;
+      }
+
+      const { data: existingListings, error: countError } = await supabaseClient
+        .from("saved_listings")
+        .select("id")
+        .eq("user_id", user.id);
+
+      if (countError) {
+        alert("Could not check saved listings.");
+        return;
+      }
+
+      const isPaid = profile && profile.plan !== "free";
+
+      if (!isPaid && existingListings.length >= 5) {
+        const upgrade = confirm(
+          "Free accounts can save up to 5 listings. Upgrade your plan for unlimited saved listings and notified searches. Go to pricing page now?"
+        );
+
+        if (upgrade) {
+          window.location.href = "/pricing.html";
         }
+
+        return;
       }
-    );
 
-    const searchData = await searchRes.json();
+      const { data: duplicate, error: duplicateError } = await supabaseClient
+        .from("saved_listings")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("item_url", itemUrl)
+        .maybeSingle();
 
-    if (!searchRes.ok) {
-      return res.status(searchRes.status).json({
-        error: "Failed to search eBay",
-        details: searchData
+      if (duplicateError) {
+        alert("Could not check for duplicate listing.");
+        return;
+      }
+
+      if (duplicate) {
+        alert("You already saved this listing.");
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from("saved_listings")
+        .insert([
+          {
+            user_id: user.id,
+            title,
+            item_url: itemUrl,
+            image_url: imageUrl,
+            price,
+            marketplace
+          }
+        ]);
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      alert("Listing saved.");
+    }
+
+    async function initSearchPage() {
+      await Promise.all([
+        loadAccountBar(),
+        loadSearchContext()
+      ]);
+
+      mountSiteFooter();
+
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get("q");
+
+      if (q) {
+        document.getElementById("query").value = q;
+        searchParts();
+      }
+
+      document.getElementById("query").addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+          searchParts();
+        }
       });
     }
 
-    return res.status(200).json({
-      ...searchData,
-      source: "ebay",
-      query,
-      match_mode: matchMode
-    });
-  } catch (err) {
-    return res.status(500).json({
-      error: "API error",
-      details: String(err)
-    });
-  }
-}
+    initSearchPage();
+  </script>
+</body>
+</html>
