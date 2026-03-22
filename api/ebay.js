@@ -1,48 +1,65 @@
 export default async function handler(req, res) {
+  const query = (req.query.q || "").trim();
+  const matchMode = req.query.match === "broad" ? "broad" : "exact";
 
-  const query = req.query.q
-
-  if(!query){
-    return res.status(400).json({error:"Missing query"})
+  if (!query) {
+    return res.status(400).json({ error: "Missing query" });
   }
 
-  try{
-
+  try {
     const auth = Buffer.from(
       process.env.EBAY_CLIENT_ID + ":" + process.env.EBAY_CLIENT_SECRET
-    ).toString("base64")
+    ).toString("base64");
 
     const tokenRes = await fetch(
       "https://api.ebay.com/identity/v1/oauth2/token",
       {
-        method:"POST",
-        headers:{
-          "Content-Type":"application/x-www-form-urlencoded",
-          "Authorization":"Basic " + auth
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Authorization": "Basic " + auth
         },
-        body:"grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope"
+        body: "grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope"
       }
-    )
+    );
 
-    const tokenData = await tokenRes.json()
+    const tokenData = await tokenRes.json();
+
+    if (!tokenRes.ok || !tokenData.access_token) {
+      return res.status(500).json({
+        error: "Failed to get eBay access token",
+        details: tokenData
+      });
+    }
 
     const searchRes = await fetch(
       `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=12`,
       {
-        headers:{
-          "Authorization":"Bearer " + tokenData.access_token
+        headers: {
+          "Authorization": "Bearer " + tokenData.access_token
         }
       }
-    )
+    );
 
-    const searchData = await searchRes.json()
+    const searchData = await searchRes.json();
 
-    res.status(200).json(searchData)
+    if (!searchRes.ok) {
+      return res.status(searchRes.status).json({
+        error: "Failed to search eBay",
+        details: searchData
+      });
+    }
 
-  }catch(err){
-
-    res.status(500).json({error:"API error"})
-
+    return res.status(200).json({
+      ...searchData,
+      source: "ebay",
+      query,
+      match_mode: matchMode
+    });
+  } catch (err) {
+    return res.status(500).json({
+      error: "API error",
+      details: String(err)
+    });
   }
-
 }
