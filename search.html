@@ -223,7 +223,7 @@
               Up Garage is intended for enthusiasts sourcing parts for personal vehicle use, not resale. By viewing Up Garage results in Stray Parts, you agree to use this source in that spirit.
             </div>
             <label class="checkbox-row">
-              <input type="checkbox" id="upgarage-agree-checkbox">
+              <input type="checkbox" class="upgarage-agree-checkbox">
               <span>I understand and agree.</span>
             </label>
             <div class="inline-actions">
@@ -464,35 +464,35 @@ const response = await fetch(ebayUrl);
     }
 
     async function acknowledgeUpGarage() {
-      const checkbox = document.getElementById("upgarage-agree-checkbox");
+  const checkedBox = document.querySelector(".upgarage-agree-checkbox:checked");
 
-      if (!checkbox || !checkbox.checked) {
-        alert("Please tick the checkbox to continue.");
-        return;
-      }
+  if (!checkedBox) {
+    alert("Please tick the checkbox to continue.");
+    return;
+  }
 
-      const user = await getCurrentUser();
+  const user = await getCurrentUser();
 
-      if (!user) {
-        localStorage.setItem("upgarage_acknowledged", "true");
-        upgarageAcknowledged = true;
-        if (latestQuery) searchParts();
-        return;
-      }
+  if (!user) {
+    localStorage.setItem("upgarage_acknowledged", "true");
+    upgarageAcknowledged = true;
+    if (latestQuery) searchParts();
+    return;
+  }
 
-      const { error } = await supabaseClient
-        .from("profiles")
-        .update({ upgarage_acknowledged: true })
-        .eq("id", user.id);
+  const { error } = await supabaseClient
+    .from("profiles")
+    .update({ upgarage_acknowledged: true })
+    .eq("id", user.id);
 
-      if (error) {
-        alert("Could not save your acknowledgement.");
-        return;
-      }
+  if (error) {
+    alert("Could not save your acknowledgement.");
+    return;
+  }
 
-      upgarageAcknowledged = true;
-      if (latestQuery) searchParts();
-    }
+  upgarageAcknowledged = true;
+  if (latestQuery) searchParts();
+}
 
     async function saveListing(title, itemUrl, imageUrl, price, marketplace) {
       const user = await getCurrentUser();
