@@ -25,7 +25,7 @@ module.exports = async function handler(req, res) {
 
     let items = rawResults.flat();
 
-    items = dedupeItems(items).slice(0, 18);
+    items = dedupeItems(items).slice(0, 12);
 
     items = await normalizeListings({
       source: "Up Garage",
