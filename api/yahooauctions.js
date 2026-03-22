@@ -10,6 +10,7 @@ module.exports = async function handler(req, res) {
   const query = (req.query.q || "").trim();
   const debug = req.query.debug === "1";
   const smart = req.query.smart === "1";
+  const matchMode = req.query.match === "broad" ? "broad" : "exact";
 
   if (!query) {
     return res.status(400).json({ error: "Missing query" });
@@ -37,6 +38,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({
         source: "yahooauctions",
         query,
+        match_mode: matchMode,
         search_url: searchUrl,
         item_url_count: itemUrls.length,
         item_urls: itemUrls.slice(0, 10),
@@ -48,15 +50,14 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({
         source: "yahooauctions",
         query,
+        match_mode: matchMode,
         count: 0,
         items: []
       });
     }
 
-    // Slightly lower than before for speed.
     const limitedUrls = itemUrls.slice(0, 10);
 
-    // Controlled concurrency instead of hammering all at once.
     const itemResults = await mapWithConcurrency(limitedUrls, 4, async (url) => {
       try {
         return await fetchYahooAuctionItem(url);
@@ -71,12 +72,14 @@ module.exports = async function handler(req, res) {
       source: "Yahoo Auctions",
       query,
       items,
-      shouldNormalize: smart
+      shouldNormalize: smart,
+      matchMode
     });
 
     return res.status(200).json({
       source: "yahooauctions",
       query,
+      match_mode: matchMode,
       count: items.length,
       items
     });
