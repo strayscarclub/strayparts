@@ -17,14 +17,17 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const queryPlan = smart
-      ? await buildSmartSearchQueries({ query })
-      : { primary_query: query, alternate_queries: [] };
+    let alternateQueries = [];
 
-    const searchTerms = [
-      queryPlan.primary_query,
-      ...queryPlan.alternate_queries
-    ].filter(Boolean);
+    if (smart) {
+      const queryPlan = await buildSmartSearchQueries({ query });
+      alternateQueries = Array.isArray(queryPlan.alternate_queries)
+        ? queryPlan.alternate_queries.filter(Boolean)
+        : [];
+    }
+
+    // Always keep the user's original query first.
+    const searchTerms = [query, ...alternateQueries].filter(Boolean);
 
     if (debug) {
       return res.status(200).json({
@@ -35,12 +38,19 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    const allItemResults = await Promise.all(
-      searchTerms.map((term) => searchYahooBySingleQuery(term))
-    );
+    // Always search the original query first.
+    const baseItems = await searchYahooBySingleQuery(query);
 
-    let items = allItemResults.flat();
-    items = dedupeItems(items).slice(0, 18);
+    // Only add alternates if smart search is on.
+    let alternateItems = [];
+    if (smart && alternateQueries.length > 0) {
+      const alternateResults = await Promise.all(
+        alternateQueries.map((term) => searchYahooBySingleQuery(term).catch(() => []))
+      );
+      alternateItems = alternateResults.flat();
+    }
+
+    let items = dedupeItems([...baseItems, ...alternateItems]).slice(0, 18);
 
     items = await normalizeListings({
       source: "Yahoo Auctions",
