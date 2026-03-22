@@ -362,7 +362,12 @@
 
     async function fetchEbay(encodedQuery, searchId) {
       try {
-        const response = await fetch(`/api/ebay?q=${encodedQuery}`);
+        const ebayUrl =
+  isPaidPlan(currentPlan)
+    ? `/api/ebay?q=${encodedQuery}&smart=1`
+    : `/api/ebay?q=${encodedQuery}`;
+
+const response = await fetch(ebayUrl);
         const data = await response.json();
 
         if (searchId !== latestSearchId) return;
