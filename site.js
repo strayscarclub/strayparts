@@ -90,7 +90,7 @@ function renderSiteFooter() {
   return `
     <footer class="site-footer">
       <p class="footer-copy">
-        Stray Parts searches marketplaces like eBay, Yahoo Auctions and Up Garage to help enthusiasts find rare car parts faster.
+        Stray Parts helps you find rare JDM parts across eBay, Yahoo Auctions and Up Garage — then alerts you when the part you want appears.
       </p>
 
       <div class="footer-nav">
