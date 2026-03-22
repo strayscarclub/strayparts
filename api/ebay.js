@@ -1,6 +1,5 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const query = (req.query.q || "").trim();
-  const matchMode = req.query.match === "broad" ? "broad" : "exact";
 
   if (!query) {
     return res.status(400).json({ error: "Missing query" });
@@ -50,16 +49,11 @@ export default async function handler(req, res) {
       });
     }
 
-    return res.status(200).json({
-      ...searchData,
-      source: "ebay",
-      query,
-      match_mode: matchMode
-    });
+    return res.status(200).json(searchData);
   } catch (err) {
     return res.status(500).json({
       error: "API error",
       details: String(err)
     });
   }
-}
+};
