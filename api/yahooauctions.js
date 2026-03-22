@@ -1,5 +1,6 @@
 const cheerio = require("cheerio");
 const normalizeListings = require("../lib/normalize-listings");
+const buildSmartSearchQueries = require("../lib/build-smart-search-queries");
 
 const DEFAULT_HEADERS = {
   "User-Agent": "Mozilla/5.0 (compatible; StrayPartsBot/1.0; +https://www.strayparts.io)",
@@ -10,76 +11,49 @@ module.exports = async function handler(req, res) {
   const query = (req.query.q || "").trim();
   const debug = req.query.debug === "1";
   const smart = req.query.smart === "1";
-  const matchMode = req.query.match === "broad" ? "broad" : "exact";
 
   if (!query) {
     return res.status(400).json({ error: "Missing query" });
   }
 
   try {
-    const searchUrl = `https://auctions.yahoo.co.jp/search/search/${encodeURIComponent(query)}/0/`;
+    const queryPlan = smart
+      ? await buildSmartSearchQueries({ query })
+      : { primary_query: query, alternate_queries: [] };
 
-    const response = await fetch(searchUrl, {
-      headers: DEFAULT_HEADERS
-    });
-
-    const html = await response.text();
-
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: "Failed to fetch Yahoo Auctions search page",
-        status: response.status
-      });
-    }
-
-    const itemUrls = extractYahooItemUrls(html);
+    const searchTerms = [
+      queryPlan.primary_query,
+      ...queryPlan.alternate_queries
+    ].filter(Boolean);
 
     if (debug) {
       return res.status(200).json({
         source: "yahooauctions",
         query,
-        match_mode: matchMode,
-        search_url: searchUrl,
-        item_url_count: itemUrls.length,
-        item_urls: itemUrls.slice(0, 10),
-        html_preview: html.slice(0, 3000)
+        smart_search: smart,
+        search_terms: searchTerms
       });
     }
 
-    if (itemUrls.length === 0) {
-      return res.status(200).json({
-        source: "yahooauctions",
-        query,
-        match_mode: matchMode,
-        count: 0,
-        items: []
-      });
-    }
+    const allItemResults = await Promise.all(
+      searchTerms.map((term) => searchYahooBySingleQuery(term))
+    );
 
-    const limitedUrls = itemUrls.slice(0, 10);
-
-    const itemResults = await mapWithConcurrency(limitedUrls, 4, async (url) => {
-      try {
-        return await fetchYahooAuctionItem(url);
-      } catch (error) {
-        return null;
-      }
-    });
-
-    let items = itemResults.filter(Boolean);
+    let items = allItemResults.flat();
+    items = dedupeItems(items).slice(0, 18);
 
     items = await normalizeListings({
       source: "Yahoo Auctions",
       query,
       items,
-      shouldNormalize: smart,
-      matchMode
+      shouldNormalize: smart
     });
 
     return res.status(200).json({
       source: "yahooauctions",
       query,
-      match_mode: matchMode,
+      smart_search: smart,
+      search_terms: searchTerms,
       count: items.length,
       items
     });
@@ -90,6 +64,35 @@ module.exports = async function handler(req, res) {
     });
   }
 };
+
+async function searchYahooBySingleQuery(searchTerm) {
+  const searchUrl = `https://auctions.yahoo.co.jp/search/search/${encodeURIComponent(searchTerm)}/0/`;
+
+  const response = await fetch(searchUrl, {
+    headers: DEFAULT_HEADERS
+  });
+
+  const html = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`Failed Yahoo search page fetch: ${response.status}`);
+  }
+
+  const itemUrls = extractYahooItemUrls(html);
+  if (itemUrls.length === 0) return [];
+
+  const limitedUrls = itemUrls.slice(0, 8);
+
+  const itemResults = await mapWithConcurrency(limitedUrls, 4, async (url) => {
+    try {
+      return await fetchYahooAuctionItem(url);
+    } catch (error) {
+      return null;
+    }
+  });
+
+  return itemResults.filter(Boolean);
+}
 
 function extractYahooItemUrls(html) {
   const urls = new Set();
@@ -233,6 +236,24 @@ async function mapWithConcurrency(items, limit, mapper) {
   await Promise.all(workers);
 
   return results;
+}
+
+function dedupeItems(items) {
+  const seen = new Set();
+  const result = [];
+
+  for (const item of items) {
+    const key =
+      item.item_url ||
+      `${item.title || ""}|${item.price || ""}|${item.image_url || ""}`;
+
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(item);
+    }
+  }
+
+  return result;
 }
 
 function cleanTitle(str) {
