@@ -25,39 +25,166 @@
     }
 
     .account-summary {
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
 
     .message {
       margin: 12px 0 20px;
-      color: #555;
       min-height: 20px;
       line-height: 1.5;
       text-align: center;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
     }
 
-    .card .actions {
-      margin-top: 14px;
+    .message.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .message.success {
+      color: #1f5130;
+      background: #e4f1e7;
+      border: 1px solid #b8d8bf;
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .message.error {
+      color: #7a1f1f;
+      background: #f7e5e5;
+      border: 1px solid #e1baba;
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .saved-summary-card {
+      background: #f4efe0;
+      border: 1px solid #d6d1b9;
+      border-radius: 14px;
+      padding: 18px 20px;
+      text-align: left;
+    }
+
+    .saved-summary-kicker {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #777;
+      margin-bottom: 8px;
+    }
+
+    .saved-summary-title {
+      font-size: 22px;
+      line-height: 1.2;
+      color: #222;
+      margin: 0 0 8px;
+      font-weight: normal;
+    }
+
+    .saved-summary-copy {
+      color: #555;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .saved-list-header {
+      margin: 30px 0 14px;
+      text-align: left;
+    }
+
+    .saved-list-title {
+      font-size: 24px;
+      color: #222;
+      margin: 0 0 6px;
+      font-weight: normal;
+    }
+
+    .saved-list-copy {
+      color: #666;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .saved-card {
+      background: #1b1b1b;
+      color: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 14px 0;
+      text-align: left;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .saved-thumb {
+      width: 120px;
+      height: 120px;
+      border-radius: 10px;
+      background: #2a2a2a;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .saved-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .saved-title {
+      font-size: 21px;
+      line-height: 1.35;
+      color: white;
+      margin: 0 0 10px;
+      word-break: break-word;
+    }
+
+    .saved-price {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: white;
+    }
+
+    .saved-meta {
+      color: #aaa;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+
+    .saved-actions {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       align-items: center;
     }
 
-    .card .actions .btn,
-    .card .actions button {
+    .saved-actions .btn,
+    .saved-actions button {
       padding: 12px 16px;
       font-size: 15px;
       margin: 0;
     }
 
-    .empty-state .content {
+    .empty-state {
       text-align: left;
     }
 
     @media (max-width: 760px) {
       .saved-top-actions {
         text-align: left;
+      }
+
+      .saved-card {
+        flex-direction: column;
+      }
+
+      .saved-thumb {
+        width: 100%;
+        height: 220px;
       }
     }
   </style>
@@ -77,7 +204,7 @@
     <main class="saved-page">
       <div class="hero">
         <h1>Saved Listings</h1>
-        <p class="subtext">Your saved parts listings live here.</p>
+        <p class="subtext">Keep the parts worth watching in one place so you can come back to them any time.</p>
       </div>
 
       <div class="saved-top-actions">
@@ -86,6 +213,14 @@
 
       <div id="account" class="account-summary"></div>
       <div id="message" class="message"></div>
+
+      <div class="saved-list-header">
+        <h2 class="saved-list-title">Your saved parts</h2>
+        <div class="saved-list-copy">
+          These are the listings you have kept aside while you decide, compare, or wait for the right time to buy.
+        </div>
+      </div>
+
       <div id="saved-listings"></div>
     </main>
 
@@ -97,6 +232,34 @@
   <script>
     let currentUser = null;
     let currentPlan = "free";
+    let messageTimeout = null;
+
+    function showMessage(text, type = "success", autoHide = true) {
+      const message = document.getElementById("message");
+      if (!message) return;
+
+      message.innerText = text;
+      message.className = `message show ${type}`;
+
+      if (messageTimeout) {
+        clearTimeout(messageTimeout);
+        messageTimeout = null;
+      }
+
+      if (autoHide) {
+        messageTimeout = setTimeout(() => {
+          clearMessage();
+        }, 3500);
+      }
+    }
+
+    function clearMessage() {
+      const message = document.getElementById("message");
+      if (!message) return;
+
+      message.className = "message";
+      message.innerText = "";
+    }
 
     async function loadPage() {
       const user = await loadAccountBar({ requireAuth: true });
@@ -108,35 +271,50 @@
 
       const { data: profile, error: profileError } = await supabaseClient
         .from("profiles")
-        .select("email, plan")
+        .select("plan")
         .eq("id", user.id)
         .single();
 
       if (profileError) {
         accountDiv.innerHTML = `
-          <div class="card">
-            <div class="content">
-              <div class="title">Could not load account profile</div>
-            </div>
+          <div class="saved-summary-card">
+            <div class="saved-summary-title">Could not load your saved listing info</div>
+            <div class="saved-summary-copy">Please try again.</div>
           </div>
         `;
-      } else if (profile) {
-        currentPlan = profile.plan || "free";
-
-        accountDiv.innerHTML = `
-          <div class="card">
-            <div class="content">
-              <div class="title">${escapeHtml(profile.email || user.email || "")}</div>
-              <div class="meta">Plan: ${escapeHtml(formatPlan(currentPlan))}</div>
-              <div class="meta">
-                ${currentPlan === "free"
-                  ? "Free plan: up to 5 saved listings"
-                  : "Paid plan: unlimited saved listings"}
-              </div>
-            </div>
-          </div>
-        `;
+        mountSiteFooter();
+        return;
       }
+
+      currentPlan = profile?.plan || "free";
+
+      const { data: listings, error: listingsCountError } = await supabaseClient
+        .from("saved_listings")
+        .select("id")
+        .eq("user_id", user.id);
+
+      const currentCount = listingsCountError ? 0 : (listings ? listings.length : 0);
+
+      let title = "Saved listing limit reached";
+      let copy = "Free accounts can save up to 5 listings at one time.";
+
+      if (currentPlan === "free") {
+        title = `${currentCount} of 5 saved listings used`;
+        copy = "Free accounts can save up to 5 listings. Upgrade when you want unlimited saved parts.";
+      }
+
+      if (currentPlan === "builder" || currentPlan === "collector") {
+        title = `${currentCount} saved listing${currentCount === 1 ? "" : "s"}`;
+        copy = "Your paid plan includes unlimited saved listings, so you can keep track of everything worth coming back to.";
+      }
+
+      accountDiv.innerHTML = `
+        <div class="saved-summary-card">
+          <div class="saved-summary-kicker">Saved Listings</div>
+          <h2 class="saved-summary-title">${title}</h2>
+          <div class="saved-summary-copy">${copy}</div>
+        </div>
+      `;
 
       await loadSavedListings();
       mountSiteFooter();
@@ -153,10 +331,10 @@
 
       if (error) {
         listingsDiv.innerHTML = `
-          <div class="card empty-state">
-            <div class="content">
-              <div class="title">Could not load saved listings</div>
-              <p class="meta">Please try again.</p>
+          <div class="saved-card empty-state">
+            <div class="saved-content">
+              <div class="saved-title">Could not load saved listings</div>
+              <div class="saved-meta">Please try again.</div>
             </div>
           </div>
         `;
@@ -165,10 +343,10 @@
 
       if (!listings || listings.length === 0) {
         listingsDiv.innerHTML = `
-          <div class="card empty-state">
-            <div class="content">
-              <div class="title">No saved listings yet</div>
-              <p class="meta">Go to the search page and save a listing.</p>
+          <div class="saved-card empty-state">
+            <div class="saved-content">
+              <div class="saved-title">No saved listings yet</div>
+              <div class="saved-meta">Go to the search page and save the parts you want to keep an eye on.</div>
             </div>
           </div>
         `;
@@ -176,19 +354,19 @@
       }
 
       listingsDiv.innerHTML = listings.map(listing => `
-        <div class="card">
+        <div class="saved-card">
           ${
             listing.image_url
-              ? `<img class="thumb" src="${escapeHtml(listing.image_url)}" alt="${escapeHtml(listing.title || "Saved listing")}">`
-              : `<div class="thumb"></div>`
+              ? `<img class="saved-thumb" src="${escapeHtml(listing.image_url)}" alt="${escapeHtml(listing.title || "Saved listing")}">`
+              : `<div class="saved-thumb"></div>`
           }
 
-          <div class="content">
-            <div class="title">${escapeHtml(listing.title || "Untitled listing")}</div>
-            <div class="price">${escapeHtml(listing.price || "Price not available")}</div>
-            <div class="meta">Marketplace: ${escapeHtml(listing.marketplace || "Unknown")}</div>
+          <div class="saved-content">
+            <h2 class="saved-title">${escapeHtml(listing.title || "Untitled listing")}</h2>
+            <div class="saved-price">${escapeHtml(listing.price || "Price not available")}</div>
+            <div class="saved-meta">Marketplace: ${escapeHtml(listing.marketplace || "Unknown")}</div>
 
-            <div class="actions">
+            <div class="saved-actions">
               <a class="btn" href="${escapeHtml(listing.item_url || "#")}" target="_blank" rel="noopener noreferrer">View Listing</a>
               <button class="btn btn-secondary" onclick="deleteListing('${listing.id}')">Delete</button>
             </div>
@@ -198,8 +376,7 @@
     }
 
     async function deleteListing(listingId) {
-      const message = document.getElementById("message");
-      message.innerText = "";
+      clearMessage();
 
       const confirmed = confirm("Delete this saved listing?");
       if (!confirmed) return;
@@ -211,12 +388,53 @@
         .eq("user_id", currentUser.id);
 
       if (error) {
-        message.innerText = "Could not delete saved listing.";
+        showMessage("Could not delete saved listing.", "error", false);
         return;
       }
 
-      message.innerText = "Saved listing deleted.";
+      showMessage("Saved listing deleted.", "success", true);
       await loadSavedListings();
+      await refreshSavedSummary();
+    }
+
+    async function refreshSavedSummary() {
+      const accountDiv = document.getElementById("account");
+
+      const { data: profile } = await supabaseClient
+        .from("profiles")
+        .select("plan")
+        .eq("id", currentUser.id)
+        .single();
+
+      currentPlan = profile?.plan || "free";
+
+      const { data: listings } = await supabaseClient
+        .from("saved_listings")
+        .select("id")
+        .eq("user_id", currentUser.id);
+
+      const currentCount = listings ? listings.length : 0;
+
+      let title = "Saved listing limit reached";
+      let copy = "Free accounts can save up to 5 listings at one time.";
+
+      if (currentPlan === "free") {
+        title = `${currentCount} of 5 saved listings used`;
+        copy = "Free accounts can save up to 5 listings. Upgrade when you want unlimited saved parts.";
+      }
+
+      if (currentPlan === "builder" || currentPlan === "collector") {
+        title = `${currentCount} saved listing${currentCount === 1 ? "" : "s"}`;
+        copy = "Your paid plan includes unlimited saved listings, so you can keep track of everything worth coming back to.";
+      }
+
+      accountDiv.innerHTML = `
+        <div class="saved-summary-card">
+          <div class="saved-summary-kicker">Saved Listings</div>
+          <h2 class="saved-summary-title">${title}</h2>
+          <div class="saved-summary-copy">${copy}</div>
+        </div>
+      `;
     }
 
     loadPage();
