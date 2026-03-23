@@ -530,7 +530,7 @@ function clearMessage() {
 
   document.getElementById("alert-query").value = "";
   showMessage("Alert created.", "success", true);
-  await loadPage();
+  await loadAlerts();
 }
 
     function runSearch(query) {
@@ -538,26 +538,25 @@ function clearMessage() {
     }
 
     async function deleteAlert(alertId) {
-      const message = document.getElementById("message");
-      message.innerText = "";
+  clearMessage();
 
-      const confirmed = confirm("Delete this alert?");
-      if (!confirmed) return;
+  const confirmed = confirm("Delete this alert?");
+  if (!confirmed) return;
 
-      const { error } = await supabaseClient
-        .from("notified_searches")
-        .delete()
-        .eq("id", alertId)
-        .eq("user_id", currentUser.id);
+  const { error } = await supabaseClient
+    .from("notified_searches")
+    .delete()
+    .eq("id", alertId)
+    .eq("user_id", currentUser.id);
 
-      if (error) {
-        message.innerText = "Could not delete alert.";
-        return;
-      }
+  if (error) {
+    showMessage("Could not delete alert.", "error", false);
+    return;
+  }
 
-      message.innerText = "Alert deleted.";
-      await loadPage();
-    }
+  showMessage("Alert deleted.", "success", true);
+  await loadAlerts();
+}
 
     document.addEventListener("keydown", function(event) {
       if (event.key === "Enter" && document.activeElement && document.activeElement.id === "alert-query") {
