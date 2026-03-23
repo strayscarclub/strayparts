@@ -1,5 +1,11 @@
 const { createClient } = require("@supabase/supabase-js");
 const cheerio = require("cheerio");
+const normalizeListings = require("../lib/normalize-listings");
+const buildSmartSearchQueries = require("../lib/build-smart-search-queries");
+
+const DEFAULT_HEADERS = {
+  "User-Agent": "Mozilla/5.0 (compatible; StrayPartsBot/1.0; +https://www.strayparts.io)"
+};
 
 module.exports = async function handler(req, res) {
   const authHeader = req.headers.authorization;
@@ -73,21 +79,20 @@ module.exports = async function handler(req, res) {
 
       // eBay
       try {
-        const ebayItems = await searchEbay(alert.query, ebayToken);
+        const ebayItems = await searchEbaySmart(alert.query, ebayToken);
         for (const item of ebayItems) {
-          const seenId = `ebay:${item.itemId}`;
+          const seenId = `ebay:${item.itemId || item.item_id || item.item_url}`;
           const alreadySeen = await hasSeenItem(supabase, alert.id, seenId);
           if (alreadySeen) continue;
 
           newItems.push({
             source: "eBay",
             seen_id: seenId,
-            title: item.title || "Untitled listing",
-            itemWebUrl: addAffiliateParams(item.itemWebUrl || ""),
-            imageUrl: item.image?.imageUrl || "",
-            price: item.price
-              ? `${item.price.value} ${item.price.currency}`
-              : "Price not available"
+            title: item.display_title || item.title || "Untitled listing",
+            hint: item.english_hint || "",
+            itemWebUrl: addAffiliateParams(item.item_url || item.itemWebUrl || ""),
+            imageUrl: item.image_url || item.imageUrl || item.image?.imageUrl || "",
+            price: item.price || "Price not available"
           });
 
           alertDebug.source_counts.ebay += 1;
@@ -98,16 +103,17 @@ module.exports = async function handler(req, res) {
 
       // Yahoo Auctions
       try {
-        const yahooItems = await searchYahooAuctions(alert.query);
+        const yahooItems = await searchYahooAuctionsSmart(alert.query);
         for (const item of yahooItems) {
-          const seenId = `yahoo:${item.itemId}`;
+          const seenId = `yahoo:${item.itemId || item.item_id || item.item_url}`;
           const alreadySeen = await hasSeenItem(supabase, alert.id, seenId);
           if (alreadySeen) continue;
 
           newItems.push({
             source: "Yahoo Auctions",
             seen_id: seenId,
-            title: item.title || "Untitled listing",
+            title: item.display_title || item.title || "Untitled listing",
+            hint: item.english_hint || "",
             itemWebUrl: item.item_url || "",
             imageUrl: item.image_url || "",
             price: item.price || "Price not available"
@@ -121,24 +127,17 @@ module.exports = async function handler(req, res) {
 
       // Up Garage
       try {
-        let upgarageItems = await searchUpGarage(alert.query);
-
-        if (!upgarageItems.length) {
-          const fallbackQuery = buildFallbackQuery(alert.query);
-          if (fallbackQuery && fallbackQuery !== alert.query) {
-            upgarageItems = await searchUpGarage(fallbackQuery);
-          }
-        }
-
+        const upgarageItems = await searchUpGarageSmart(alert.query);
         for (const item of upgarageItems) {
-          const seenId = `upgarage:${item.itemId}`;
+          const seenId = `upgarage:${item.itemId || item.item_id || item.item_url}`;
           const alreadySeen = await hasSeenItem(supabase, alert.id, seenId);
           if (alreadySeen) continue;
 
           newItems.push({
             source: "Up Garage",
             seen_id: seenId,
-            title: item.title || "Untitled listing",
+            title: item.display_title || item.title || "Untitled listing",
+            hint: item.english_hint || "",
             itemWebUrl: item.item_url || "",
             imageUrl: item.image_url || "",
             price: item.price || "Price not available"
@@ -150,13 +149,13 @@ module.exports = async function handler(req, res) {
         // keep going
       }
 
-      alertDebug.new_items_found = newItems.length;
-
-      if (newItems.length === 0) {
+      if (!newItems.length) {
         alertDebug.skipped_reason = "no_new_items";
         processed.push(alertDebug);
         continue;
       }
+
+      alertDebug.new_items_found = newItems.length;
 
       if (!userDigestMap.has(profile.email)) {
         userDigestMap.set(profile.email, {
@@ -256,21 +255,77 @@ async function getEbayToken() {
   return tokenData.access_token;
 }
 
-async function searchEbay(query, accessToken) {
-  const searchRes = await fetch(
-    `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=6`,
-    {
-      headers: {
-        "Authorization": `Bearer ${accessToken}`
-      }
-    }
-  );
+async function buildSearchTerms(query) {
+  const plan = await buildSmartSearchQueries({ query });
+  const terms = [query, ...(plan.alternate_queries || [])]
+    .map((q) => String(q || "").trim())
+    .filter(Boolean);
 
-  const data = await searchRes.json();
-  return data.itemSummaries || [];
+  return Array.from(new Set(terms.map((q) => q.toLowerCase()))).map((lowered) => {
+    return terms.find((t) => t.toLowerCase() === lowered);
+  });
 }
 
-async function searchUpGarage(query) {
+async function searchEbaySmart(query, accessToken) {
+  const searchTerms = await buildSearchTerms(query);
+
+  const resultSets = await Promise.all(
+    searchTerms.map(async (term) => {
+      const searchRes = await fetch(
+        `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(term)}&limit=6`,
+        {
+          headers: {
+            "Authorization": `Bearer ${accessToken}`
+          }
+        }
+      );
+
+      const data = await searchRes.json();
+      return Array.isArray(data.itemSummaries) ? data.itemSummaries : [];
+    })
+  );
+
+  const rawItems = dedupeByKey(
+    resultSets.flat().map((item) => ({
+      itemId: item.itemId || item.itemWebUrl || "",
+      title: item.title || "Untitled listing",
+      item_url: item.itemWebUrl || "",
+      image_url: item.image?.imageUrl || "",
+      price: item.price ? `${item.price.value} ${item.price.currency}` : "Price not available",
+      marketplace: "eBay"
+    })),
+    (item) => item.itemId || item.item_url
+  ).slice(0, 12);
+
+  return normalizeListings({
+    source: "eBay",
+    query,
+    items: rawItems,
+    shouldNormalize: true
+  });
+}
+
+async function searchUpGarageSmart(query) {
+  const searchTerms = await buildSearchTerms(query);
+
+  const resultSets = await Promise.all(
+    searchTerms.map((term) => fetchUpGarageSearch(term).catch(() => []))
+  );
+
+  const rawItems = dedupeByKey(
+    resultSets.flat(),
+    (item) => item.itemId || item.item_url
+  ).slice(0, 12);
+
+  return normalizeListings({
+    source: "Up Garage",
+    query,
+    items: rawItems,
+    shouldNormalize: true
+  });
+}
+
+async function fetchUpGarageSearch(query) {
   const apiUrl =
     `https://www.upgarage.com/service/api/v1/items` +
     `?dd_bunrui_cd=01` +
@@ -284,7 +339,7 @@ async function searchUpGarage(query) {
 
   const response = await fetch(apiUrl, {
     headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; StrayPartsBot/1.0; +https://www.strayparts.io)",
+      ...DEFAULT_HEADERS,
       "Accept": "application/json"
     }
   });
@@ -301,16 +356,46 @@ async function searchUpGarage(query) {
       ? `¥${Number(item.tax_included_price).toLocaleString("en-US")}`
       : item.price
       ? `¥${Number(item.price).toLocaleString("en-US")}`
-      : "Price not available"
+      : "Price not available",
+    marketplace: "Up Garage",
+    shop_name: item.shop_name || "",
+    category: item.s_bunrui_name || ""
   }));
 }
 
-async function searchYahooAuctions(query) {
+async function searchYahooAuctionsSmart(query) {
+  const searchTerms = await buildSearchTerms(query);
+
+  const baseItems = await searchYahooAuctionsSingle(query).catch(() => []);
+  const alternateTerms = searchTerms.filter((term) => term.toLowerCase() !== query.toLowerCase());
+
+  let alternateItems = [];
+  if (alternateTerms.length) {
+    const alternateResultSets = await Promise.all(
+      alternateTerms.map((term) => searchYahooAuctionsSingle(term).catch(() => []))
+    );
+    alternateItems = alternateResultSets.flat();
+  }
+
+  const rawItems = dedupeByKey(
+    [...baseItems, ...alternateItems],
+    (item) => item.itemId || item.item_url
+  ).slice(0, 12);
+
+  return normalizeListings({
+    source: "Yahoo Auctions",
+    query,
+    items: rawItems,
+    shouldNormalize: true
+  });
+}
+
+async function searchYahooAuctionsSingle(query) {
   const searchUrl = `https://auctions.yahoo.co.jp/search/search/${encodeURIComponent(query)}/0/`;
 
   const response = await fetch(searchUrl, {
     headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; StrayPartsBot/1.0; +https://www.strayparts.io)",
+      ...DEFAULT_HEADERS,
       "Accept-Language": "ja,en-US;q=0.9,en;q=0.8"
     }
   });
@@ -350,7 +435,7 @@ function extractYahooItemUrls(html) {
 async function fetchYahooAuctionItem(itemUrl) {
   const response = await fetch(itemUrl, {
     headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; StrayPartsBot/1.0; +https://www.strayparts.io)",
+      ...DEFAULT_HEADERS,
       "Accept-Language": "ja,en-US;q=0.9,en;q=0.8"
     }
   });
@@ -371,9 +456,10 @@ async function fetchYahooAuctionItem(itemUrl) {
     item_url: itemUrl,
     image_url:
       $('meta[property="og:image"]').attr("content") ||
-      $('img').first().attr("src") ||
+      $("img").first().attr("src") ||
       "",
-    price: extractPrice(bodyText) || "Price not available"
+    price: formatYahooPrice(extractPrice(bodyText)) || "Price not available",
+    marketplace: "Yahoo Auctions"
   };
 }
 
@@ -400,22 +486,30 @@ async function sendDigestEmail(toEmail, alertGroups) {
         .slice(0, 8)
         .map(
           (item) => `
-            <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid #ddd;">
-              ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" style="max-width:140px;border-radius:8px;display:block;margin-bottom:10px;">` : ""}
-              <div style="font-size:12px;color:#777;margin-bottom:6px;">${escapeHtml(item.source)}</div>
-              <h4 style="margin:0 0 8px 0;">${escapeHtml(item.title)}</h4>
-              <p style="margin:0 0 8px 0;color:#555;"><strong>Price:</strong> ${escapeHtml(item.price)}</p>
-              <p style="margin:0;">
-                <a href="${item.itemWebUrl}" style="color:#a42a0e;font-weight:bold;">View listing</a>
-              </p>
+            <div style="margin-bottom:20px;padding:18px;border:1px solid #e5e1d5;border-radius:14px;background:#faf8f2;">
+              ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" style="max-width:140px;border-radius:10px;display:block;margin-bottom:12px;">` : ""}
+              <div style="font-size:12px;color:#777;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.6px;">
+                ${escapeHtml(item.source)}
+              </div>
+              <div style="font-size:18px;line-height:1.4;font-weight:bold;color:#222;margin-bottom:8px;">
+                ${escapeHtml(item.title)}
+              </div>
+              ${item.hint ? `<div style="font-size:14px;color:#666;line-height:1.5;margin-bottom:8px;">${escapeHtml(item.hint)}</div>` : ""}
+              <div style="font-size:16px;font-weight:bold;color:#222;margin-bottom:12px;">
+                ${escapeHtml(item.price || "Price not available")}
+              </div>
+              <a href="${item.itemWebUrl}" style="display:inline-block;padding:12px 18px;background:#a42a0e;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;">
+                View Listing
+              </a>
             </div>
           `
         )
         .join("");
 
       return `
-        <div style="margin-bottom:32px;">
-          <h2 style="color:#222;margin-bottom:10px;">${escapeHtml(group.query)}</h2>
+        <div style="margin-bottom:34px;">
+          <h2 style="font-size:20px;line-height:1.3;margin:0 0 8px;color:#222;">${escapeHtml(group.query)}</h2>
+          <p style="font-size:14px;color:#666;margin:0 0 16px;">${group.items.length} new match${group.items.length === 1 ? "" : "es"}</p>
           ${itemsHtml}
         </div>
       `;
@@ -423,15 +517,21 @@ async function sendDigestEmail(toEmail, alertGroups) {
     .join("");
 
   const html = `
-    <div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;padding:20px;">
-      <h1 style="color:#222;">New matches on Stray Parts</h1>
-      <p style="color:#555;">We found new listings across your notified searches.</p>
-      <div style="margin-top:24px;">
-        ${groupedHtml}
+    <div style="font-family:Arial,sans-serif;background:#ede8d0;padding:32px 16px;color:#222;">
+      <div style="max-width:720px;margin:0 auto;background:#fffaf0;border-radius:18px;padding:32px;border:1px solid #ddd6bf;">
+        <div style="text-align:center;margin-bottom:24px;">
+          <h1 style="margin:0 0 10px;font-size:30px;line-height:1.1;color:#222;">Stray Parts Alerts</h1>
+          <p style="margin:0;color:#666;font-size:15px;">New matches have been found for your notified searches.</p>
+        </div>
+
+        <div style="margin-top:24px;">
+          ${groupedHtml}
+        </div>
+
+        <p style="margin-top:30px;color:#777;font-size:14px;line-height:1.6;">
+          You’re receiving this email because you created notified searches on Stray Parts.
+        </p>
       </div>
-      <p style="margin-top:30px;color:#777;font-size:14px;">
-        You’re receiving this email because you created notified searches on Stray Parts.
-      </p>
     </div>
   `;
 
@@ -442,7 +542,7 @@ async function sendDigestEmail(toEmail, alertGroups) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      from: "delivered@resend.dev",
+      from: "Stray Parts Alerts <alerts@mail.strayparts.io>",
       to: toEmail,
       subject,
       html
@@ -458,16 +558,6 @@ async function sendDigestEmail(toEmail, alertGroups) {
   return data;
 }
 
-function buildFallbackQuery(query) {
-  const cleaned = String(query || "").trim();
-  if (!cleaned) return "";
-
-  const parts = cleaned.split(/\s+/).filter(Boolean);
-  if (!parts.length) return "";
-
-  return parts[0];
-}
-
 function extractPrice(text) {
   if (!text) return "";
   return (
@@ -478,6 +568,30 @@ function extractPrice(text) {
     text.match(/[\d,]+円/)?.[0] ||
     ""
   );
+}
+
+function formatYahooPrice(raw) {
+  if (!raw) return "";
+  const numeric = String(raw).match(/[\d,]+/);
+  if (!numeric) return "";
+  return `¥${numeric[0]}`;
+}
+
+function dedupeByKey(items, keyFn) {
+  const seen = new Set();
+  const result = [];
+
+  for (const item of items) {
+    const key = keyFn(item);
+    if (!key) continue;
+
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(item);
+    }
+  }
+
+  return result;
 }
 
 function cleanTitle(str) {
