@@ -25,7 +25,7 @@
     }
 
     .account-summary {
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
 
     .message {
@@ -36,21 +36,74 @@
       text-align: center;
     }
 
-    .form-card {
-      background: #1b1b1b;
-      color: white;
+    .limit-card {
+      background: #f4efe0;
+      border: 1px solid #d6d1b9;
       border-radius: 14px;
-      padding: 22px;
-      margin: 24px 0;
+      padding: 18px 20px;
       text-align: left;
     }
 
-    .form-card .title {
+    .limit-kicker {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #777;
       margin-bottom: 8px;
     }
 
-    .form-card .meta {
-      margin-bottom: 14px;
+    .limit-title {
+      font-size: 22px;
+      line-height: 1.2;
+      color: #222;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    .limit-copy {
+      color: #555;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .create-alert-card {
+      background: #1b1b1b;
+      color: white;
+      border-radius: 16px;
+      padding: 24px;
+      margin: 26px 0;
+      text-align: left;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .create-alert-kicker {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #aaa;
+      margin-bottom: 8px;
+    }
+
+    .create-alert-title {
+      font-size: 28px;
+      line-height: 1.1;
+      margin-bottom: 10px;
+      color: white;
+    }
+
+    .create-alert-copy {
+      color: #bbb;
+      font-size: 15px;
+      line-height: 1.7;
+      margin-bottom: 18px;
+      max-width: 700px;
+    }
+
+    .alert-note {
+      color: #aaa;
+      font-size: 13px;
+      line-height: 1.6;
+      margin-top: 12px;
     }
 
     .form-row {
@@ -73,22 +126,81 @@
       font-size: 16px;
     }
 
-    .card .actions {
-      margin-top: 14px;
+    .alerts-list-header {
+      margin: 30px 0 14px;
+      text-align: left;
+    }
+
+    .alerts-list-title {
+      font-size: 24px;
+      color: #222;
+      margin-bottom: 6px;
+    }
+
+    .alerts-list-copy {
+      color: #666;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .alert-card {
+      background: #1b1b1b;
+      color: white;
+      border-radius: 16px;
+      padding: 22px;
+      margin: 14px 0;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .alert-card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .alert-card-title {
+      font-size: 22px;
+      line-height: 1.3;
+      color: white;
+      margin: 0;
+    }
+
+    .alert-badge {
+      display: inline-block;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: #2a2a2a;
+      color: #ddd;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .alert-card-copy {
+      color: #aaa;
+      font-size: 14px;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .alert-actions {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       align-items: center;
     }
 
-    .card .actions .btn,
-    .card .actions button {
+    .alert-actions .btn,
+    .alert-actions button {
       padding: 12px 16px;
       font-size: 15px;
       margin: 0;
     }
 
-    .empty-state .content,
     .empty-state {
       text-align: left;
     }
@@ -105,6 +217,15 @@
       .form-row input,
       .form-row button {
         width: 100%;
+      }
+
+      .create-alert-title {
+        font-size: 24px;
+      }
+
+      .alert-card-top {
+        flex-direction: column;
+        align-items: flex-start;
       }
     }
   </style>
@@ -124,7 +245,7 @@
     <main class="alerts-page">
       <div class="hero">
         <h1>Notified Searches</h1>
-        <p class="subtext">Track the parts you want and get notified when new listings appear.</p>
+        <p class="subtext">Set a watch for the parts you’ve been chasing and let Stray Parts keep an eye out for you.</p>
       </div>
 
       <div class="alerts-top-actions">
@@ -134,13 +255,27 @@
       <div id="account" class="account-summary"></div>
       <div id="message" class="message"></div>
 
-      <div class="form-card">
-        <div class="title">Create New Alert</div>
-        <p class="meta">Example: recaro confetti seats, gc8 turbo, ej207 engine</p>
+      <div class="create-alert-card">
+        <div class="create-alert-kicker">Stay Ready</div>
+        <div class="create-alert-title">Create a new alert</div>
+        <div class="create-alert-copy">
+          Put in the part you want and Stray Parts will keep checking eBay, Yahoo Auctions and Up Garage for new matches. This is built for the rare parts that do not show up every day.
+        </div>
 
         <div class="form-row">
-          <input id="alert-query" type="text" placeholder="Enter part you want to track" />
+          <input id="alert-query" type="text" placeholder="Enter the part you want to track" />
           <button class="btn" onclick="createAlert()">Create Alert</button>
+        </div>
+
+        <div class="alert-note">
+          Broader searches can bring more frequent alert emails. More specific searches usually stay tighter.
+        </div>
+      </div>
+
+      <div class="alerts-list-header">
+        <div class="alerts-list-title">Your active alerts</div>
+        <div class="alerts-list-copy">
+          These are the searches Stray Parts is currently watching for you.
         </div>
       </div>
 
@@ -166,16 +301,15 @@
 
       const { data: profile, error: profileError } = await supabaseClient
         .from("profiles")
-        .select("email, plan")
+        .select("plan")
         .eq("id", user.id)
         .single();
 
       if (profileError) {
         accountDiv.innerHTML = `
-          <div class="card">
-            <div class="content">
-              <div class="title">Could not load account profile</div>
-            </div>
+          <div class="limit-card">
+            <div class="limit-title">Could not load your alert limits</div>
+            <div class="limit-copy">Please try again.</div>
           </div>
         `;
         mountSiteFooter();
@@ -184,17 +318,34 @@
 
       currentPlan = profile.plan || "free";
 
-      let limitText = "Free plan: notified searches are not included.";
-      if (currentPlan === "builder") limitText = "Builder plan: up to 10 notified searches. Checked every hour.";
-      if (currentPlan === "collector") limitText = "Collector plan: up to 30 notified searches. Checked every hour.";
+      const { data: alerts, error: alertsCountError } = await supabaseClient
+        .from("notified_searches")
+        .select("id")
+        .eq("user_id", currentUser.id);
+
+      const currentCount = alertsCountError ? 0 : (alerts ? alerts.length : 0);
+
+      let limit = 0;
+      let title = "Alerts are not included on Free";
+      let copy = "Upgrade your plan to set alerts and get notified when new listings appear.";
+
+      if (currentPlan === "builder") {
+        limit = 10;
+        title = `${currentCount} of ${limit} alerts used`;
+        copy = "Builder keeps watch across eBay, Yahoo Auctions and Up Garage, checked every hour.";
+      }
+
+      if (currentPlan === "collector") {
+        limit = 30;
+        title = `${currentCount} of ${limit} alerts used`;
+        copy = "Collector gives you more room to track rare parts and ongoing searches across all supported marketplaces.";
+      }
 
       accountDiv.innerHTML = `
-        <div class="card">
-          <div class="content">
-            <div class="title">${escapeHtml(profile.email || user.email || "")}</div>
-            <div class="meta">Plan: ${escapeHtml(formatPlan(currentPlan))}</div>
-            <div class="meta">${escapeHtml(limitText)}</div>
-          </div>
+        <div class="limit-card">
+          <div class="limit-kicker">Alert Capacity</div>
+          <div class="limit-title">${title}</div>
+          <div class="limit-copy">${copy}</div>
         </div>
       `;
 
@@ -213,11 +364,9 @@
 
       if (error) {
         alertsDiv.innerHTML = `
-          <div class="card empty-state">
-            <div class="content">
-              <div class="title">Could not load notified searches</div>
-              <p class="meta">Please try again.</p>
-            </div>
+          <div class="alert-card empty-state">
+            <div class="alert-card-title">Could not load notified searches</div>
+            <p class="alert-card-copy">Please try again.</p>
           </div>
         `;
         return;
@@ -225,26 +374,28 @@
 
       if (!alerts || alerts.length === 0) {
         alertsDiv.innerHTML = `
-          <div class="card empty-state">
-            <div class="content">
-              <div class="title">No notified searches yet</div>
-              <p class="meta">Create one above to start tracking parts.</p>
-            </div>
+          <div class="alert-card empty-state">
+            <div class="alert-card-title">No alerts yet</div>
+            <p class="alert-card-copy">Create one above and Stray Parts will start watching for it.</p>
           </div>
         `;
         return;
       }
 
       alertsDiv.innerHTML = alerts.map(alert => `
-        <div class="card">
-          <div class="content">
-            <div class="title">${escapeHtml(alert.query)}</div>
-            <div class="meta">Active: ${alert.is_active ? "Yes" : "No"}</div>
+        <div class="alert-card">
+          <div class="alert-card-top">
+            <h2 class="alert-card-title">${escapeHtml(alert.query)}</h2>
+            <div class="alert-badge">${alert.is_active ? "Watching now" : "Paused"}</div>
+          </div>
 
-            <div class="actions">
-              <button class="btn" onclick="runSearch('${escapeJs(alert.query)}')">Search</button>
-              <button class="btn btn-secondary" onclick="deleteAlert('${alert.id}')">Delete</button>
-            </div>
+          <p class="alert-card-copy">
+            Stray Parts is checking supported marketplaces for new listings related to this search.
+          </p>
+
+          <div class="alert-actions">
+            <button class="btn" onclick="runSearch('${escapeJs(alert.query)}')">Search</button>
+            <button class="btn btn-secondary" onclick="deleteAlert('${alert.id}')">Delete</button>
           </div>
         </div>
       `).join("");
@@ -287,14 +438,14 @@
       if (existingAlerts.length >= limit) {
         if (currentPlan === "builder") {
           const upgrade = confirm(
-            "Builder accounts can have up to 10 notified searches. Upgrade to Collector for up to 30?"
+            "Builder accounts can have up to 10 alerts. Upgrade to Collector for up to 30?"
           );
 
           if (upgrade) {
             window.location.href = "/pricing.html";
           }
         } else {
-          message.innerText = "Collector accounts can have up to 30 notified searches.";
+          message.innerText = "Collector accounts can have up to 30 alerts.";
         }
 
         return;
@@ -333,8 +484,8 @@
       }
 
       document.getElementById("alert-query").value = "";
-      message.innerText = "Notified search created.";
-      await loadAlerts();
+      message.innerText = "Alert created.";
+      await loadPage();
     }
 
     function runSearch(query) {
@@ -345,7 +496,7 @@
       const message = document.getElementById("message");
       message.innerText = "";
 
-      const confirmed = confirm("Delete this notified search?");
+      const confirmed = confirm("Delete this alert?");
       if (!confirmed) return;
 
       const { error } = await supabaseClient
@@ -355,12 +506,12 @@
         .eq("user_id", currentUser.id);
 
       if (error) {
-        message.innerText = "Could not delete notified search.";
+        message.innerText = "Could not delete alert.";
         return;
       }
 
-      message.innerText = "Notified search deleted.";
-      await loadAlerts();
+      message.innerText = "Alert deleted.";
+      await loadPage();
     }
 
     document.addEventListener("keydown", function(event) {
