@@ -29,12 +29,35 @@
     }
 
     .message {
-      margin: 12px 0 20px;
-      color: #555;
-      min-height: 20px;
-      line-height: 1.5;
-      text-align: center;
-    }
+  margin: 12px 0 20px;
+  min-height: 20px;
+  line-height: 1.5;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.message.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.message.success {
+  color: #1f5130;
+  background: #e4f1e7;
+  border: 1px solid #b8d8bf;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.message.error {
+  color: #7a1f1f;
+  background: #f7e5e5;
+  border: 1px solid #e1baba;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
 
     .limit-card {
       background: #f4efe0;
@@ -290,7 +313,34 @@
   <script>
     let currentUser = null;
     let currentPlan = "free";
+let messageTimeout = null;
 
+function showMessage(text, type = "success", autoHide = true) {
+  const message = document.getElementById("message");
+  if (!message) return;
+
+  message.innerText = text;
+  message.className = `message show ${type}`;
+
+  if (messageTimeout) {
+    clearTimeout(messageTimeout);
+    messageTimeout = null;
+  }
+
+  if (autoHide) {
+    messageTimeout = setTimeout(() => {
+      clearMessage();
+    }, 3500);
+  }
+}
+
+function clearMessage() {
+  const message = document.getElementById("message");
+  if (!message) return;
+
+  message.className = "message";
+  message.innerText = "";
+}
     async function loadPage() {
       const user = await loadAccountBar({ requireAuth: true });
       if (!user) return;
@@ -389,10 +439,6 @@
             <div class="alert-badge">${alert.is_active ? "Watching now" : "Paused"}</div>
           </div>
 
-          <p class="alert-card-copy">
-            Stray Parts is checking supported marketplaces for new listings related to this search.
-          </p>
-
           <div class="alert-actions">
             <button class="btn" onclick="runSearch('${escapeJs(alert.query)}')">Search</button>
             <button class="btn btn-secondary" onclick="deleteAlert('${alert.id}')">Delete</button>
@@ -402,91 +448,90 @@
     }
 
     async function createAlert() {
-      const query = document.getElementById("alert-query").value.trim();
-      const message = document.getElementById("message");
-      message.innerText = "";
+  const query = document.getElementById("alert-query").value.trim();
+  clearMessage();
 
-      if (!query) {
-        message.innerText = "Enter a part name to track.";
-        return;
-      }
+  if (!query) {
+    showMessage("Enter a part name to track.", "error", false);
+    return;
+  }
 
-      if (currentPlan === "free") {
-        const upgrade = confirm(
-          "Notified searches are available on paid plans only. Upgrade now?"
-        );
+  if (currentPlan === "free") {
+    const upgrade = confirm(
+      "Notified searches are available on paid plans only. Upgrade now?"
+    );
 
-        if (upgrade) {
-          window.location.href = "/pricing.html";
-        }
-
-        return;
-      }
-
-      const { data: existingAlerts, error: countError } = await supabaseClient
-        .from("notified_searches")
-        .select("id")
-        .eq("user_id", currentUser.id);
-
-      if (countError) {
-        message.innerText = "Could not check your alert limits.";
-        return;
-      }
-
-      const limit = currentPlan === "builder" ? 10 : 30;
-
-      if (existingAlerts.length >= limit) {
-        if (currentPlan === "builder") {
-          const upgrade = confirm(
-            "Builder accounts can have up to 10 alerts. Upgrade to Collector for up to 30?"
-          );
-
-          if (upgrade) {
-            window.location.href = "/pricing.html";
-          }
-        } else {
-          message.innerText = "Collector accounts can have up to 30 alerts.";
-        }
-
-        return;
-      }
-
-      const { data: duplicate, error: duplicateError } = await supabaseClient
-        .from("notified_searches")
-        .select("id")
-        .eq("user_id", currentUser.id)
-        .eq("query", query)
-        .maybeSingle();
-
-      if (duplicateError) {
-        message.innerText = "Could not check for duplicate alert.";
-        return;
-      }
-
-      if (duplicate) {
-        message.innerText = "You already created an alert for this search.";
-        return;
-      }
-
-      const { error } = await supabaseClient
-        .from("notified_searches")
-        .insert([
-          {
-            user_id: currentUser.id,
-            query: query,
-            is_active: true
-          }
-        ]);
-
-      if (error) {
-        message.innerText = error.message;
-        return;
-      }
-
-      document.getElementById("alert-query").value = "";
-      message.innerText = "Alert created.";
-      await loadPage();
+    if (upgrade) {
+      window.location.href = "/pricing.html";
     }
+
+    return;
+  }
+
+  const { data: existingAlerts, error: countError } = await supabaseClient
+    .from("notified_searches")
+    .select("id")
+    .eq("user_id", currentUser.id);
+
+  if (countError) {
+    showMessage("Could not check your alert limits.", "error", false);
+    return;
+  }
+
+  const limit = currentPlan === "builder" ? 10 : 30;
+
+  if (existingAlerts.length >= limit) {
+    if (currentPlan === "builder") {
+      const upgrade = confirm(
+        "Builder accounts can have up to 10 alerts. Upgrade to Collector for up to 30?"
+      );
+
+      if (upgrade) {
+        window.location.href = "/pricing.html";
+      }
+    } else {
+      showMessage("Collector accounts can have up to 30 alerts.", "error", false);
+    }
+
+    return;
+  }
+
+  const { data: duplicate, error: duplicateError } = await supabaseClient
+    .from("notified_searches")
+    .select("id")
+    .eq("user_id", currentUser.id)
+    .eq("query", query)
+    .maybeSingle();
+
+  if (duplicateError) {
+    showMessage("Could not check for duplicate alert.", "error", false);
+    return;
+  }
+
+  if (duplicate) {
+    showMessage("You already created an alert for this search.", "error", false);
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("notified_searches")
+    .insert([
+      {
+        user_id: currentUser.id,
+        query: query,
+        is_active: true
+      }
+    ]);
+
+  if (error) {
+    showMessage(error.message, "error", false);
+    return;
+  }
+
+  document.getElementById("alert-query").value = "";
+  showMessage("Alert created.", "success", true);
+  await loadPage();
+}
 
     function runSearch(query) {
       window.location.href = "/search.html?q=" + encodeURIComponent(query);
