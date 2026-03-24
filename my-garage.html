@@ -14,6 +14,95 @@
     .hero {
       margin-bottom: 34px;
     }
+
+    .garage-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .garage-card {
+      background: #1b1b1b;
+      color: white;
+      border-radius: 16px;
+      padding: 22px;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .garage-card h2 {
+      margin: 0 0 10px;
+      font-size: 22px;
+    }
+
+    .garage-card-copy {
+      color: #aaa;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .plan-kicker {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #aaa;
+      margin-bottom: 8px;
+    }
+
+    .plan-badge {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #a42a0e;
+      color: white;
+      font-size: 14px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+
+    .plan-details {
+      color: #cfcfcf;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-top: 6px;
+    }
+
+    .plan-email {
+      color: #aaa;
+      font-size: 14px;
+      margin-top: 10px;
+      word-break: break-word;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .btn-row .btn {
+      flex: 1;
+      min-width: 140px;
+      text-align: center;
+    }
+
+    .garage-card-search {
+      grid-column: 1 / -1;
+      min-height: auto;
+    }
+
+    @media (max-width: 860px) {
+      .garage-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .garage-card-search {
+        grid-column: auto;
+      }
+    }
   </style>
 </head>
 <body>
@@ -36,13 +125,15 @@
         <p class="subtext">Manage your plan, saved listings, alerts and account tools.</p>
       </div>
 
-      <div class="grid">
-        <div class="dashboard-card">
+      <div class="garage-grid">
+        <div class="garage-card">
           <div>
+            <div class="plan-kicker">Account</div>
             <h2>Your Plan</h2>
-            <div class="muted">Current subscription level and account details.</div>
+            <div class="garage-card-copy">Your current subscription and account access.</div>
             <div id="plan-badge" class="plan-badge">Loading...</div>
-            <div id="user-email" class="email"></div>
+            <div id="plan-details" class="plan-details"></div>
+            <div id="user-email" class="plan-email"></div>
           </div>
 
           <div class="btn-row">
@@ -51,10 +142,10 @@
           </div>
         </div>
 
-        <div class="dashboard-card">
+        <div class="garage-card">
           <div>
             <h2>Saved Listings</h2>
-            <div class="muted">
+            <div class="garage-card-copy">
               View and manage the parts you’ve saved from across marketplaces.
             </div>
           </div>
@@ -64,10 +155,10 @@
           </div>
         </div>
 
-        <div class="dashboard-card">
+        <div class="garage-card">
           <div>
             <h2>Alerts</h2>
-            <div class="muted">
+            <div class="garage-card-copy">
               Manage your notified searches and stay updated when new listings appear.
             </div>
           </div>
@@ -77,11 +168,11 @@
           </div>
         </div>
 
-        <div class="dashboard-card">
+        <div class="garage-card garage-card-search">
           <div>
             <h2>Search</h2>
-            <div class="muted">
-              Jump back into search and keep hunting for rare parts.
+            <div class="garage-card-copy">
+              Jump back into search and keep hunting for rare parts across supported marketplaces.
             </div>
           </div>
 
@@ -100,6 +191,7 @@
   <script>
     async function loadPage() {
       const planBadge = document.getElementById("plan-badge");
+      const planDetails = document.getElementById("plan-details");
       const userEmail = document.getElementById("user-email");
       const successBanner = document.getElementById("success-banner");
 
@@ -129,10 +221,16 @@
         .eq("id", user.id)
         .single();
 
-      if (error || !profile) {
-        planBadge.textContent = "Free";
+      const plan = error || !profile ? "free" : (profile.plan || "free");
+
+      planBadge.textContent = formatPlan(plan);
+
+      if (plan === "builder") {
+        planDetails.textContent = "Builder includes unlimited saved listings, Smart Search and up to 10 alerts.";
+      } else if (plan === "collector") {
+        planDetails.textContent = "Collector includes unlimited saved listings, Smart Search and up to 30 alerts.";
       } else {
-        planBadge.textContent = formatPlan(profile.plan || "free");
+        planDetails.textContent = "Free includes up to 5 saved listings. Upgrade to unlock alerts and smarter search.";
       }
 
       mountSiteFooter();
