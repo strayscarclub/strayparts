@@ -2,6 +2,7 @@ const { createClient } = require("@supabase/supabase-js");
 const cheerio = require("cheerio");
 const normalizeListings = require("../lib/normalize-listings");
 const buildSmartSearchQueries = require("../lib/build-smart-search-queries");
+const filterSmartSearchResults = require("../lib/filter-smart-search-results");
 
 const DEFAULT_HEADERS = {
   "User-Agent": "Mozilla/5.0 (compatible; StrayPartsBot/1.0; +https://www.strayparts.io)"
@@ -77,9 +78,9 @@ module.exports = async function handler(req, res) {
 
       const newItems = [];
 
-      // eBay
       try {
         const ebayItems = await searchEbaySmart(alert.query, ebayToken);
+
         for (const item of ebayItems) {
           const seenId = `ebay:${item.itemId || item.item_id || item.item_url}`;
           const alreadySeen = await hasSeenItem(supabase, alert.id, seenId);
@@ -101,9 +102,9 @@ module.exports = async function handler(req, res) {
         // keep going
       }
 
-      // Yahoo Auctions
       try {
         const yahooItems = await searchYahooAuctionsSmart(alert.query);
+
         for (const item of yahooItems) {
           const seenId = `yahoo:${item.itemId || item.item_id || item.item_url}`;
           const alreadySeen = await hasSeenItem(supabase, alert.id, seenId);
@@ -125,9 +126,9 @@ module.exports = async function handler(req, res) {
         // keep going
       }
 
-      // Up Garage
       try {
         const upgarageItems = await searchUpGarageSmart(alert.query);
+
         for (const item of upgarageItems) {
           const seenId = `upgarage:${item.itemId || item.item_id || item.item_url}`;
           const alreadySeen = await hasSeenItem(supabase, alert.id, seenId);
@@ -285,7 +286,7 @@ async function searchEbaySmart(query, accessToken) {
     })
   );
 
-  const rawItems = dedupeByKey(
+  let rawItems = dedupeByKey(
     resultSets.flat().map((item) => ({
       itemId: item.itemId || item.itemWebUrl || "",
       title: item.title || "Untitled listing",
@@ -296,6 +297,12 @@ async function searchEbaySmart(query, accessToken) {
     })),
     (item) => item.itemId || item.item_url
   ).slice(0, 12);
+
+  rawItems = await filterSmartSearchResults({
+    query,
+    items: rawItems,
+    source: "eBay"
+  });
 
   return normalizeListings({
     source: "eBay",
@@ -312,10 +319,16 @@ async function searchUpGarageSmart(query) {
     searchTerms.map((term) => fetchUpGarageSearch(term).catch(() => []))
   );
 
-  const rawItems = dedupeByKey(
+  let rawItems = dedupeByKey(
     resultSets.flat(),
     (item) => item.itemId || item.item_url
   ).slice(0, 12);
+
+  rawItems = await filterSmartSearchResults({
+    query,
+    items: rawItems,
+    source: "Up Garage"
+  });
 
   return normalizeListings({
     source: "Up Garage",
@@ -377,10 +390,16 @@ async function searchYahooAuctionsSmart(query) {
     alternateItems = alternateResultSets.flat();
   }
 
-  const rawItems = dedupeByKey(
+  let rawItems = dedupeByKey(
     [...baseItems, ...alternateItems],
     (item) => item.itemId || item.item_url
   ).slice(0, 12);
+
+  rawItems = await filterSmartSearchResults({
+    query,
+    items: rawItems,
+    source: "Yahoo Auctions"
+  });
 
   return normalizeListings({
     source: "Yahoo Auctions",
