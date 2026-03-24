@@ -1,6 +1,7 @@
 const cheerio = require("cheerio");
 const normalizeListings = require("../lib/normalize-listings");
 const buildSmartSearchQueries = require("../lib/build-smart-search-queries");
+const filterSmartSearchResults = require("../lib/filter-smart-search-results");
 
 const DEFAULT_HEADERS = {
   "User-Agent": "Mozilla/5.0 (compatible; StrayPartsBot/1.0; +https://www.strayparts.io)",
@@ -26,7 +27,6 @@ module.exports = async function handler(req, res) {
         : [];
     }
 
-    // Always keep the user's original query first.
     const searchTerms = [query, ...alternateQueries].filter(Boolean);
 
     if (debug) {
@@ -38,10 +38,8 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // Always search the original query first.
     const baseItems = await searchYahooBySingleQuery(query);
 
-    // Only add alternates if smart search is on.
     let alternateItems = [];
     if (smart && alternateQueries.length > 0) {
       const alternateResults = await Promise.all(
@@ -51,6 +49,14 @@ module.exports = async function handler(req, res) {
     }
 
     let items = dedupeItems([...baseItems, ...alternateItems]).slice(0, 12);
+
+    if (smart) {
+      items = await filterSmartSearchResults({
+        query,
+        items,
+        source: "Yahoo Auctions"
+      });
+    }
 
     items = await normalizeListings({
       source: "Yahoo Auctions",
