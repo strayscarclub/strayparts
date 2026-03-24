@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/site.css" />
   <style>
     .content-page {
-      max-width: 800px;
+      max-width: 860px;
       margin: 0 auto;
     }
 
@@ -21,8 +21,70 @@
       font-size: 16px;
     }
 
+    .content-copy h2 {
+      color: #222;
+      font-size: 24px;
+      margin: 36px 0 12px;
+      font-weight: normal;
+    }
+
     .content-copy p {
       margin: 0 0 18px;
+    }
+
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin: 22px 0 8px;
+    }
+
+    .photo-grid img {
+      width: 100%;
+      height: 260px;
+      object-fit: cover;
+      border-radius: 14px;
+      display: block;
+      background: #d6d1b9;
+    }
+
+    .support-card {
+      margin-top: 34px;
+      background: #f4efe0;
+      border: 1px solid #d6d1b9;
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .support-kicker {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #777;
+      margin-bottom: 8px;
+    }
+
+    .support-card h2 {
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
+    .support-card p {
+      margin-bottom: 16px;
+    }
+
+    .support-card .btn {
+      margin-top: 4px;
+    }
+
+    @media (max-width: 760px) {
+      .photo-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .photo-grid img {
+        height: 220px;
+      }
     }
   </style>
 </head>
@@ -41,21 +103,70 @@
     <main class="content-page">
       <div class="hero">
         <h1>About Stray Parts</h1>
-        <p class="subtext">A simpler way to search for rare car parts across multiple marketplaces.</p>
+        <p class="subtext">Built to help enthusiasts find rare parts and keep older cars alive.</p>
       </div>
 
       <div class="content-copy">
+        <h2>Why I built Stray Parts</h2>
         <p>
-          Stray Parts is a search tool designed to help car enthusiasts find rare and hard-to-find car parts across multiple marketplaces.
+          Stray Parts came from the same frustration a lot of enthusiasts know well. Finding the right part for an older car often means jumping between multiple marketplaces, digging through vague listings, translating Japanese pages, and hoping the part has not already sold by the time you find it.
         </p>
 
         <p>
-          Instead of searching multiple websites individually, Stray Parts allows users to search platforms like eBay, Facebook Marketplace, Yahoo Auctions and online forums from one place.
+          I wanted one place that made that process easier. Something simple that helps people search across multiple sources, keep track of the parts they care about, and stay ready when something rare finally appears.
+        </p>
+
+        <h2>Keeping older cars alive</h2>
+        <p>
+          A big part of this project is about helping enthusiasts keep older cars on the road. The longer I have been around old cars, the more I have realised how much time gets lost just trying to find the right parts. Sometimes that search is half the battle.
         </p>
 
         <p>
-          Our goal is to make finding rare automotive parts faster and easier for enthusiasts, restorers and builders.
+          Stray Parts is my way of making that easier. Whether someone is restoring a car, keeping a long-term project going, or chasing a part they have wanted for years, the goal is the same: make the hunt simpler and give those cars a better chance of staying alive.
         </p>
+
+        <h2>I’m an enthusiast too</h2>
+        <p>
+          This site was not built from the outside looking in. I am into older cars myself, and that is a big reason Stray Parts exists in the first place. I know what it feels like to spend hours searching, comparing listings, translating descriptions and trying not to miss the good stuff.
+        </p>
+
+        <p>
+          That is also why I want Stray Parts to feel useful, honest and focused on what actually matters. Less clutter, better searches, and a better chance of finding the parts that are getting harder to track down.
+        </p>
+
+        <div class="photo-grid">
+          <img src="/about-photo-1.jpg" alt="Photo of Matt with an old car">
+          <img src="/about-photo-2.jpg" alt="Old car project photo">
+          <img src="/about-photo-3.jpg" alt="Car build or garage photo">
+          <img src="/about-photo-4.jpg" alt="Classic or older car photo">
+        </div>
+
+        <p>
+          You can swap these placeholders for your own photos. Three to five images is plenty here and will help show that Stray Parts is being built by someone who genuinely lives in this world too.
+        </p>
+
+        <h2>The mission</h2>
+        <p>
+          The mission is simple: help enthusiasts find rare parts faster, make Japanese marketplace searching easier, and do a small part in helping older cars stay on the road for longer.
+        </p>
+
+        <p>
+          Stray Parts is still growing, but that is the direction behind it from the start.
+        </p>
+
+        <div class="support-card">
+          <div class="support-kicker">Stray Coins</div>
+          <h2>Support the project</h2>
+          <p>
+            If you want to support Stray Parts, I may add a small support section here called <strong>Stray Coins</strong>. It would help me keep improving the project and also chip away at a personal dream build of buying an EF Honda Civic and swapping in a K-series or B-series engine.
+          </p>
+
+          <p>
+            That support would always be optional, and the main focus will stay on building something genuinely useful for the community.
+          </p>
+
+          <a class="btn btn-secondary" href="#" onclick="return false;">Support coming later</a>
+        </div>
       </div>
     </main>
 
