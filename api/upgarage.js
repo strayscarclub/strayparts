@@ -1,5 +1,6 @@
 const normalizeListings = require("../lib/normalize-listings");
 const buildSmartSearchQueries = require("../lib/build-smart-search-queries");
+const filterSmartSearchResults = require("../lib/filter-smart-search-results");
 
 module.exports = async function handler(req, res) {
   const query = (req.query.q || "").trim();
@@ -15,8 +16,8 @@ module.exports = async function handler(req, res) {
       : { primary_query: query, alternate_queries: [] };
 
     const searchTerms = [
-      queryPlan.primary_query,
-      ...queryPlan.alternate_queries
+      query,
+      ...(queryPlan.alternate_queries || [])
     ].filter(Boolean);
 
     const rawResults = await Promise.all(
@@ -26,6 +27,14 @@ module.exports = async function handler(req, res) {
     let items = rawResults.flat();
 
     items = dedupeItems(items).slice(0, 12);
+
+    if (smart) {
+      items = await filterSmartSearchResults({
+        query,
+        items,
+        source: "Up Garage"
+      });
+    }
 
     items = await normalizeListings({
       source: "Up Garage",
@@ -65,7 +74,7 @@ async function fetchUpGarageSearch(searchTerm) {
   const response = await fetch(apiUrl, {
     headers: {
       "User-Agent": "Mozilla/5.0 (compatible; StrayPartsBot/1.0; +https://www.strayparts.io)",
-      Accept: "application/json"
+      "Accept": "application/json"
     }
   });
 
