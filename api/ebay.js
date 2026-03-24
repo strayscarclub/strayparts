@@ -1,6 +1,7 @@
-module.exports = async function handler(req, res) {
-  const buildSmartSearchQueries = require("../lib/build-smart-search-queries");
+const buildSmartSearchQueries = require("../lib/build-smart-search-queries");
+const filterSmartSearchResults = require("../lib/filter-smart-search-results");
 
+module.exports = async function handler(req, res) {
   const query = (req.query.q || "").trim();
   const smart = req.query.smart === "1";
 
@@ -14,8 +15,8 @@ module.exports = async function handler(req, res) {
       : { primary_query: query, alternate_queries: [] };
 
     const searchTerms = [
-      queryPlan.primary_query,
-      ...queryPlan.alternate_queries
+      query,
+      ...(queryPlan.alternate_queries || [])
     ].filter(Boolean);
 
     const auth = Buffer.from(
@@ -64,7 +65,21 @@ module.exports = async function handler(req, res) {
       })
     );
 
-    const merged = dedupeEbayItems(resultSets.flat()).slice(0, 12);
+    let merged = dedupeEbayItems(
+      resultSets.flat().map((item) => ({
+        ...item,
+        title: item.title || "Untitled listing",
+        marketplace: "eBay"
+      }))
+    ).slice(0, 12);
+
+    if (smart) {
+      merged = await filterSmartSearchResults({
+        query,
+        items: merged,
+        source: "eBay"
+      });
+    }
 
     return res.status(200).json({
       source: "ebay",
