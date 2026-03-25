@@ -89,36 +89,35 @@
     }
 
     function renderResultsShell(query) {
-      const results = document.getElementById("results");
+  const results = document.getElementById("results");
 
-      results.innerHTML = `
-        <div class="tabs">
-          <button class="tab-btn active" data-tab="all" onclick="switchTab('all', this)">All</button>
-          <button class="tab-btn" data-tab="ebay" onclick="switchTab('ebay', this)">eBay</button>
-          <button class="tab-btn" data-tab="upgarage" onclick="switchTab('upgarage', this)">Up Garage</button>
-          <button class="tab-btn" data-tab="yahoo" onclick="switchTab('yahoo', this)">Yahoo Auctions</button>
-        </div>
+  results.innerHTML = `
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="all" onclick="switchTab('all', this)">All</button>
+      <button class="tab-btn" data-tab="ebay" onclick="switchTab('ebay', this)">eBay</button>
+      <button class="tab-btn" data-tab="upgarage" onclick="switchTab('upgarage', this)">Up Garage</button>
+      <button class="tab-btn" data-tab="yahoo" onclick="switchTab('yahoo', this)">Yahoo Auctions</button>
+    </div>
 
-        <div class="tab-panel active" id="tab-all">
-          <div id="section-ebay">${renderLoadingCard(query)}</div>
-          <div id="section-upgarage">${renderLoadingCard(query)}</div>
-          <div id="section-yahoo">${renderLoadingCard(query)}</div>
-          <div id="section-other">${buildOtherSourcesHtml(query)}</div>
-        </div>
+    <div class="tab-panel active" id="tab-all">
+      <div id="section-ebay">${renderLoadingCard(query)}</div>
+      <div id="section-upgarage">${renderLoadingCard(query)}</div>
+      <div id="section-yahoo">${renderLoadingCard(query)}</div>
+    </div>
 
-        <div class="tab-panel" id="tab-ebay">
-          <div id="section-ebay-tab">${renderLoadingCard(query)}</div>
-        </div>
+    <div class="tab-panel" id="tab-ebay">
+      <div id="section-ebay-tab">${renderLoadingCard(query)}</div>
+    </div>
 
-        <div class="tab-panel" id="tab-upgarage">
-          <div id="section-upgarage-tab">${renderLoadingCard(query)}</div>
-        </div>
+    <div class="tab-panel" id="tab-upgarage">
+      <div id="section-upgarage-tab">${renderLoadingCard(query)}</div>
+    </div>
 
-        <div class="tab-panel" id="tab-yahoo">
-          <div id="section-yahoo-tab">${renderLoadingCard(query)}</div>
-        </div>
-      `;
-    }
+    <div class="tab-panel" id="tab-yahoo">
+      <div id="section-yahoo-tab">${renderLoadingCard(query)}</div>
+    </div>
+  `;
+}
 
     function updateSection(sectionKey, html) {
       const allSection = document.getElementById(`section-${sectionKey}`);
