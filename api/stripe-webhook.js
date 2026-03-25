@@ -35,13 +35,12 @@ module.exports = async function handler(req, res) {
         const userId = session.metadata?.supabase_user_id || null;
         const subscriptionId = session.subscription || null;
         const customerId = session.customer || null;
-        const plan = session.metadata?.selected_plan || "free";
 
         if (userId) {
           await supabase
             .from("profiles")
             .update({
-              plan,
+              plan: "builder",
               stripe_customer_id: customerId,
               stripe_subscription_id: subscriptionId
             })
@@ -59,17 +58,9 @@ module.exports = async function handler(req, res) {
       const status = subscription.status;
 
       let nextPlan = "free";
-      if (status === "active" || status === "trialing" || status === "past_due") {
-        // keep current paid plan if possible
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("plan")
-          .eq("stripe_customer_id", customerId)
-          .single();
 
-        if (status === "active" || status === "trialing" || status === "past_due") {
-  nextPlan = "builder";
-}
+      if (status === "active" || status === "trialing" || status === "past_due") {
+        nextPlan = "builder";
       }
 
       if (event.type === "customer.subscription.deleted") {
