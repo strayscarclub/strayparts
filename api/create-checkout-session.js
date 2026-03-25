@@ -15,10 +15,6 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: "Missing STRIPE_PRICE_ID_BUILDER" });
     }
 
-    if (!process.env.STRIPE_PRICE_ID_COLLECTOR) {
-      return res.status(500).json({ error: "Missing STRIPE_PRICE_ID_COLLECTOR" });
-    }
-
     if (!process.env.SITE_URL) {
       return res.status(500).json({ error: "Missing SITE_URL" });
     }
@@ -31,16 +27,11 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const priceId =
-      plan === "builder"
-        ? process.env.STRIPE_PRICE_ID_BUILDER
-        : plan === "collector"
-        ? process.env.STRIPE_PRICE_ID_COLLECTOR
-        : null;
-
-    if (!priceId) {
+    if (plan !== "builder") {
       return res.status(400).json({ error: "Invalid plan" });
     }
+
+    const priceId = process.env.STRIPE_PRICE_ID_BUILDER;
 
     const supabase = createClient(
       process.env.SUPABASE_URL,
@@ -61,6 +52,21 @@ module.exports = async function handler(req, res) {
     }
 
     let customerId = profile?.stripe_customer_id || null;
+
+    if (customerId) {
+      try {
+        const existingCustomer = await stripe.customers.retrieve(customerId);
+        if (existingCustomer.deleted) {
+          customerId = null;
+        }
+      } catch (err) {
+        if (err.code === "resource_missing") {
+          customerId = null;
+        } else {
+          throw err;
+        }
+      }
+    }
 
     if (!customerId) {
       const customer = await stripe.customers.create({
@@ -94,12 +100,15 @@ module.exports = async function handler(req, res) {
           quantity: 1
         }
       ],
+      subscription_data: {
+        trial_period_days: 30
+      },
       success_url: `${process.env.SITE_URL}/my-garage.html?success=1`,
       cancel_url: `${process.env.SITE_URL}/pricing.html?canceled=1`,
       allow_promotion_codes: true,
       metadata: {
         supabase_user_id: userId,
-        selected_plan: plan
+        selected_plan: "builder"
       }
     });
 
