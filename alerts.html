@@ -373,36 +373,30 @@ function clearMessage() {
 
       currentPlan = profile.plan || "free";
 
-      const { data: alerts, error: alertsCountError } = await supabaseClient
-        .from("notified_searches")
-        .select("id")
-        .eq("user_id", currentUser.id);
+const { data: alerts, error: alertsCountError } = await supabaseClient
+  .from("notified_searches")
+  .select("id")
+  .eq("user_id", currentUser.id);
 
-      const currentCount = alertsCountError ? 0 : (alerts ? alerts.length : 0);
+const currentCount = alertsCountError ? 0 : (alerts ? alerts.length : 0);
 
-      let limit = 0;
-      let title = "Alerts are not included on Free";
-      let copy = "Upgrade your plan to set alerts and get notified when new listings appear.";
+let limit = 0;
+let title = "Alerts are not included on Free";
+let copy = "Upgrade your plan to set alerts and get notified when new listings appear.";
 
-      if (currentPlan === "builder") {
-        limit = 10;
-        title = `${currentCount} of ${limit} alerts used`;
-        copy = "Builder keeps watch across eBay, Yahoo Auctions and Up Garage, checked every hour.";
-      }
+if (currentPlan === "builder" || currentPlan === "collector") {
+  limit = 10;
+  title = `${currentCount} of ${limit} alerts used`;
+  copy = "Builder keeps watch across eBay, Yahoo Auctions and Up Garage, checked every hour.";
+}
 
-      if (currentPlan === "collector") {
-        limit = 30;
-        title = `${currentCount} of ${limit} alerts used`;
-        copy = "Collector gives you more room to track rare parts and ongoing searches across all supported marketplaces.";
-      }
-
-      accountDiv.innerHTML = `
-        <div class="limit-card">
-          <div class="limit-kicker">Alert Capacity</div>
-          <div class="limit-title">${title}</div>
-          <div class="limit-copy">${copy}</div>
-        </div>
-      `;
+accountDiv.innerHTML = `
+  <div class="limit-card">
+    <div class="limit-kicker">Alert Capacity</div>
+    <div class="limit-title">${title}</div>
+    <div class="limit-copy">${copy}</div>
+  </div>
+`;
 
       await loadAlerts();
       mountSiteFooter();
@@ -483,13 +477,12 @@ function clearMessage() {
     return;
   }
 
-  const limit = currentPlan === "builder" ? 10 : 30;
+  const limit = 10;
 
-  if (existingAlerts.length >= limit) {
-    if (currentPlan === "builder") {
-      const upgrade = confirm(
-        "Builder accounts can have up to 10 alerts. Upgrade to Collector for up to 30?"
-      );
+if (existingAlerts.length >= limit) {
+  showMessage("Builder accounts can have up to 10 alerts.", "error", false);
+  return;
+}
 
       if (upgrade) {
         window.location.href = "/pricing.html";
