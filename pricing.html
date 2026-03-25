@@ -1,266 +1,94 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pricing - Stray Parts</title>
-  <link rel="stylesheet" href="/site.css" />
-  <style>
-    .pricing-page {
-      text-align: center;
-    }
+<div class="pricing-wrap">
+  <div class="plan">
+    <div class="tag">For casual browsing</div>
+    <h2>Free</h2>
+    <div class="plan-price">$0</div>
+    <div class="plan-per">No monthly cost</div>
 
-    .pricing-hero {
-      max-width: 760px;
-      margin: 0 auto 40px;
-    }
+    <ul>
+      <li><strong>Marketplace access:</strong> Search eBay, Yahoo Auctions and Up Garage</li>
+      <li><strong>Search results:</strong> Raw marketplace listings</li>
+      <li><strong>Saved listings:</strong> Up to 5</li>
+      <li><strong>Alerts:</strong> Not included</li>
+      <li><strong>Best for:</strong> Occasional browsing and trying the platform</li>
+    </ul>
 
-    .pricing-hero h1 {
-      font-size: 44px;
-      margin-bottom: 10px;
-    }
+    <div class="plan-spacer"></div>
 
-    .pricing-subtitle {
-      color: #555;
-      max-width: 700px;
-      margin: 0 auto;
-      line-height: 1.7;
-      font-size: 16px;
-    }
-
-    .pricing-wrap {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 24px;
-      margin-top: 40px;
-      align-items: stretch;
-    }
-
-    .plan {
-      background: #1b1b1b;
-      color: white;
-      border-radius: 16px;
-      padding: 28px;
-      text-align: left;
-      display: flex;
-      flex-direction: column;
-      min-height: 100%;
-    }
-
-    .plan h2 {
-      margin-top: 0;
-      margin-bottom: 8px;
-      font-size: 28px;
-    }
-
-    .plan .tag {
-      display: inline-block;
-      background: #2a2a2a;
-      color: #ddd;
-      font-size: 12px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      margin-bottom: 18px;
-    }
-
-    .plan-price {
-      font-size: 34px;
-      font-weight: bold;
-      margin: 10px 0 4px 0;
-      color: white;
-    }
-
-    .plan-per {
-      color: #aaa;
-      margin-bottom: 24px;
-      font-size: 14px;
-    }
-
-    .plan ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .plan li {
-      margin-bottom: 12px;
-      color: #ddd;
-      line-height: 1.6;
-    }
-
-    .plan strong {
-      color: white;
-    }
-
-    .plan-spacer {
-      flex: 1;
-    }
-
-    .plan-actions {
-      margin-top: 24px;
-    }
-
-    .plan-actions .btn {
-      width: 100%;
-      text-align: center;
-      font-weight: bold;
-      font-size: 16px;
-      padding: 14px 18px;
-    }
-
-    .plan-feature-note {
-      margin-top: 10px;
-      color: #aaa;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .note {
-      margin-top: 40px;
-      color: #666;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-
-    @media (max-width: 760px) {
-      .pricing-hero h1 {
-        font-size: 34px;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="page pricing-page">
-    <div class="topbar">
-      <div class="logo-wrap">
-        <a href="/">
-          <img src="/strayparts-logo.png" alt="Stray Parts logo">
-        </a>
-      </div>
-
-      <div class="account-bar" id="account-bar"></div>
+    <div class="plan-actions">
+      <a class="btn btn-secondary" href="/signup.html">Create Free Account</a>
     </div>
-
-    <div class="pricing-hero">
-      <h1>Pricing</h1>
-      <p class="pricing-subtitle">
-        Search rare car parts across multiple marketplaces, save the listings you care about, and get notified when new parts appear.
-      </p>
-    </div>
-
-    <div class="pricing-wrap">
-      <div class="plan">
-        <div class="tag">For casual browsing</div>
-        <h2>Free</h2>
-        <div class="plan-price">$0</div>
-        <div class="plan-per">No monthly cost</div>
-
-        <ul>
-          <li><strong>Marketplace access:</strong> Search eBay, Yahoo Auctions and Up Garage</li>
-          <li><strong>Search results:</strong> Raw marketplace listings</li>
-          <li><strong>Saved listings:</strong> Up to 5</li>
-          <li><strong>Alerts:</strong> Not included</li>
-          <li><strong>Best for:</strong> Occasional browsing and trying the platform</li>
-        </ul>
-
-        <div class="plan-spacer"></div>
-
-        <div class="plan-actions">
-          <a class="btn btn-secondary" href="/signup.html">Create Free Account</a>
-        </div>
-      </div>
-
-      <div class="plan">
-        <div class="tag">Most popular</div>
-        <h2>Builder</h2>
-        <div class="plan-price">$10 NZD</div>
-        <div class="plan-per">per month</div>
-
-        <ul>
-          <li><strong>Marketplace access:</strong> eBay, Yahoo Auctions and Up Garage</li>
-          <li><strong>Smart Search:</strong> Refined search results, better matches and clearer listings from Japanese marketplaces</li>
-          <li><strong>Saved listings:</strong> Unlimited</li>
-          <li><strong>Alerts:</strong> Up to 10 notified searches</li>
-          <li><strong>Alert coverage:</strong> eBay, Yahoo Auctions and Up Garage</li>
-          <li><strong>Best for:</strong> Active builds and regular part hunting</li>
-        </ul>
-
-        <div class="plan-spacer"></div>
-
-        <div class="plan-actions">
-          <button class="btn" onclick="startCheckout('builder')">Get Builder</button>
-        </div>
-      </div>
-
-      <div class="plan">
-        <div class="tag">For serious collectors</div>
-        <h2>Collector</h2>
-        <div class="plan-price">$20 NZD</div>
-        <div class="plan-per">per month</div>
-
-        <ul>
-          <li><strong>Marketplace access:</strong> eBay, Yahoo Auctions and Up Garage</li>
-          <li><strong>Smart Search:</strong> Refined search results, better matches and clearer listings from Japanese marketplaces</li>
-          <li><strong>Saved listings:</strong> Unlimited</li>
-          <li><strong>Alerts:</strong> Up to 30 notified searches</li>
-          <li><strong>Alert coverage:</strong> eBay, Yahoo Auctions and Up Garage</li>
-          <li><strong>Best for:</strong> Restorations, rare parts and ongoing monitoring</li>
-        </ul>
-
-        <div class="plan-spacer"></div>
-
-        <div class="plan-actions">
-          <button class="btn" onclick="startCheckout('collector')">Get Collector</button>
-        </div>
-      </div>
-    </div>
-
-    <p class="note">
-       Paid plans unlock cleaner search results, higher saved listing limits and multi-marketplace alerts.
-    </p>
-
-    <div id="site-footer"></div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/site.js"></script>
-  <script>
-    async function startCheckout(plan) {
-      const user = await getCurrentUser();
+  <div class="plan">
+    <div class="tag">Launch offer</div>
+    <h2>Builder</h2>
+    <div class="plan-price">$10 NZD</div>
+    <div class="plan-per">per month after a 30-day free trial</div>
 
-      if (!user) {
-        window.location.href = "/login.html";
-        return;
-      }
+    <ul>
+      <li><strong>Marketplace access:</strong> eBay, Yahoo Auctions and Up Garage</li>
+      <li><strong>Smart Search:</strong> Refined search results, better matches and clearer listings from Japanese marketplaces</li>
+      <li><strong>Saved listings:</strong> Unlimited</li>
+      <li><strong>Alerts:</strong> Up to 10 notified searches</li>
+      <li><strong>Alert coverage:</strong> eBay, Yahoo Auctions and Up Garage</li>
+      <li><strong>Best for:</strong> Active builds and regular part hunting</li>
+    </ul>
 
-      const response = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          plan,
-          userId: user.id,
-          email: user.email
-        })
-      });
+    <div class="plan-spacer"></div>
 
-      const data = await response.json();
+    <div class="plan-actions">
+      <button class="btn" onclick="startCheckout('builder')">Start Free Trial</button>
+    </div>
+  </div>
+</div>
 
-      if (!response.ok || !data.url) {
-        alert("Could not start checkout.");
-        return;
-      }
+<p class="note">
+  Builder includes a 30-day free trial for launch. Then it becomes $10 NZD per month unless cancelled. You can manage or cancel billing any time from My Garage.
+</p>
 
-      window.location.href = data.url;
+<div id="site-footer"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/site.js"></script>
+<script>
+  async function startCheckout(plan) {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      window.location.href = "/login.html";
+      return;
     }
 
-    async function initPricingPage() {
-      await loadAccountBar();
-      mountSiteFooter();
+    const response = await fetch("/api/create-checkout-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        plan,
+        userId: user.id,
+        email: user.email
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.url) {
+      alert(data?.details || "Could not start checkout.");
+      return;
     }
 
-    initPricingPage();
-  </script>
+    window.location.href = data.url;
+  }
+
+  async function initPricingPage() {
+    await loadAccountBar();
+    mountSiteFooter();
+  }
+
+  initPricingPage();
+</script>
 </body>
 </html>
