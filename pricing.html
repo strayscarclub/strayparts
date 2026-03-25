@@ -7,81 +7,92 @@
   <link rel="stylesheet" href="/site.css" />
   <style>
     .pricing-page {
-      max-width: 1320px;
-      margin: 0 auto;
+      text-align: center;
     }
 
-    .pricing-page .hero {
-      margin-bottom: 30px;
+    .pricing-hero {
+      max-width: 760px;
+      margin: 0 auto 40px;
+    }
+
+    .pricing-hero h1 {
+      font-size: 44px;
+      margin-bottom: 10px;
+    }
+
+    .pricing-subtitle {
+      color: #555;
+      max-width: 700px;
+      margin: 0 auto;
+      line-height: 1.7;
+      font-size: 16px;
     }
 
     .pricing-wrap {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 28px;
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 40px;
       align-items: stretch;
+      flex-wrap: wrap;
     }
 
     .plan {
-      background: #171717;
+      background: #1b1b1b;
       color: white;
-      border-radius: 22px;
-      padding: 34px 34px 28px;
+      border-radius: 16px;
+      padding: 28px;
+      text-align: left;
       display: flex;
       flex-direction: column;
-      min-height: 640px;
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
-    }
-
-    .tag {
-      display: inline-block;
-      align-self: flex-start;
-      margin-bottom: 22px;
-      padding: 8px 16px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
-      color: #f2f2f2;
-      font-size: 14px;
+      width: 100%;
+      max-width: 400px;
+      min-height: 100%;
+      box-sizing: border-box;
     }
 
     .plan h2 {
-      margin: 0 0 22px;
-      font-size: 58px;
-      line-height: 0.95;
-      text-transform: uppercase;
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 28px;
+    }
+
+    .plan .tag {
+      display: inline-block;
+      background: #2a2a2a;
+      color: #ddd;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      margin-bottom: 18px;
     }
 
     .plan-price {
-      font-size: 58px;
-      line-height: 1;
+      font-size: 34px;
       font-weight: bold;
-      margin-bottom: 8px;
+      margin: 10px 0 4px 0;
       color: white;
     }
 
     .plan-per {
-      color: #d5d5d5;
-      font-size: 19px;
-      line-height: 1.5;
-      margin-bottom: 26px;
+      color: #aaa;
+      margin-bottom: 24px;
+      font-size: 14px;
     }
 
     .plan ul {
       list-style: none;
       padding: 0;
       margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
     }
 
     .plan li {
-      font-size: 18px;
-      line-height: 1.55;
-      color: #f0f0f0;
+      margin-bottom: 12px;
+      color: #ddd;
+      line-height: 1.6;
     }
 
-    .plan li strong {
+    .plan strong {
       color: white;
     }
 
@@ -90,141 +101,151 @@
     }
 
     .plan-actions {
-      margin-top: 28px;
+      margin-top: 24px;
     }
 
+    .plan-actions-row {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      align-items: stretch;
+      flex-wrap: wrap;
+      margin-top: 36px;
+      margin-bottom: 8px;
+    }
+
+    .plan-actions-row .btn,
+    .plan-actions-row .btn-secondary,
     .plan-actions .btn,
-    .plan-actions button,
-    .plan-actions a {
-      width: 100%;
-      display: inline-block;
+    .plan-actions a.btn {
       text-align: center;
-      margin: 0;
-      padding: 18px 20px;
-      font-size: 18px;
-      border-radius: 12px;
+      font-weight: bold;
+      font-size: 16px;
+      padding: 14px 18px;
+      min-width: 220px;
+      box-sizing: border-box;
     }
 
     .plan-feature-note {
-      margin-top: 14px;
-      color: #bcbcbc;
+      margin-top: 10px;
+      color: #aaa;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .note {
+      margin-top: 40px;
+      color: #666;
       font-size: 14px;
       line-height: 1.6;
     }
 
-    .note {
-      max-width: 880px;
-      margin: 28px auto 0;
-      color: #555;
-      font-size: 15px;
-      line-height: 1.7;
-      text-align: center;
-    }
-
-    @media (max-width: 980px) {
+    @media (max-width: 900px) {
       .pricing-wrap {
-        grid-template-columns: 1fr;
+        gap: 20px;
       }
 
       .plan {
-        min-height: auto;
-      }
-
-      .plan h2,
-      .plan-price {
-        font-size: 48px;
+        max-width: 360px;
       }
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 760px) {
+      .pricing-hero h1 {
+        font-size: 34px;
+      }
+
+      .pricing-wrap {
+        flex-direction: column;
+        align-items: center;
+      }
+
       .plan {
-        padding: 24px 22px 22px;
+        max-width: 100%;
       }
 
-      .plan h2,
-      .plan-price {
-        font-size: 40px;
+      .plan-actions-row {
+        flex-direction: column;
       }
 
-      .plan li {
-        font-size: 17px;
+      .plan-actions-row .btn,
+      .plan-actions-row .btn-secondary,
+      .plan-actions .btn,
+      .plan-actions a.btn {
+        width: 100%;
+        min-width: 0;
       }
     }
   </style>
 </head>
 <body>
-  <div class="page">
+  <div class="page pricing-page">
     <div class="topbar">
       <div class="logo-wrap">
         <a href="/">
-          <img src="/strayparts-logo.png" alt="Stray Parts logo" />
+          <img src="/strayparts-logo.png" alt="Stray Parts logo">
         </a>
       </div>
 
       <div class="account-bar" id="account-bar"></div>
     </div>
 
-    <main class="pricing-page">
-      <div class="hero">
-        <h1>Pricing</h1>
-        <p class="subtext">
-          Start free, then upgrade when you want smarter search, unlimited saves and alerts across marketplaces.
-        </p>
-      </div>
-
-      <div class="pricing-wrap">
-        <div class="plan">
-          <div class="tag">For casual browsing</div>
-          <h2>Free</h2>
-          <div class="plan-price">$0</div>
-          <div class="plan-per">No monthly cost</div>
-
-          <ul>
-            <li><strong>Marketplace access:</strong> Search eBay, Yahoo Auctions and Up Garage</li>
-            <li><strong>Search results:</strong> Raw marketplace listings</li>
-            <li><strong>Saved listings:</strong> Up to 5</li>
-            <li><strong>Alerts:</strong> Not included</li>
-            <li><strong>Best for:</strong> Occasional browsing and trying the platform</li>
-          </ul>
-
-          <div class="plan-spacer"></div>
-
-          <div class="plan-actions">
-            <a class="btn btn-secondary" href="/signup.html">Create Free Account</a>
-          </div>
-        </div>
-
-        <div class="plan">
-          <div class="tag">Launch offer</div>
-          <h2>Builder</h2>
-          <div class="plan-price">$10 NZD</div>
-          <div class="plan-per">per month after a 30-day free trial</div>
-
-          <ul>
-            <li><strong>Marketplace access:</strong> eBay, Yahoo Auctions and Up Garage</li>
-            <li><strong>Smart Search:</strong> Refined search results, better matches and clearer listings from Japanese marketplaces</li>
-            <li><strong>Saved listings:</strong> Unlimited</li>
-            <li><strong>Alerts:</strong> Up to 10 notified searches</li>
-            <li><strong>Alert coverage:</strong> eBay, Yahoo Auctions and Up Garage</li>
-            <li><strong>Best for:</strong> Active builds and regular part hunting</li>
-          </ul>
-
-          <div class="plan-spacer"></div>
-
-          <div class="plan-actions">
-            <button class="btn" onclick="startCheckout('builder')">Start Free Trial</button>
-          </div>
-
-          <div class="plan-feature-note">
-            30 days free, then $10 NZD/month unless cancelled. Manage or cancel billing any time from My Garage.
-          </div>
-        </div>
-      </div>
-
-      <p class="note">
-        Builder includes a 30-day free trial for launch. Then it becomes $10 NZD per month unless cancelled.
+    <div class="pricing-hero">
+      <h1>Pricing</h1>
+      <p class="pricing-subtitle">
+        Search rare car parts across multiple marketplaces, save the listings you care about, and get notified when new parts appear.
       </p>
-    </main>
+    </div>
+
+    <div class="pricing-wrap">
+      <div class="plan">
+        <div class="tag">For casual browsing</div>
+        <h2>Free</h2>
+        <div class="plan-price">$0</div>
+        <div class="plan-per">No monthly cost</div>
+
+        <ul>
+          <li><strong>Marketplace access:</strong> Search eBay, Yahoo Auctions and Up Garage</li>
+          <li><strong>Search results:</strong> Raw marketplace listings</li>
+          <li><strong>Saved listings:</strong> Up to 5</li>
+          <li><strong>Alerts:</strong> Not included</li>
+          <li><strong>Best for:</strong> Occasional browsing and trying the platform</li>
+        </ul>
+
+        <div class="plan-spacer"></div>
+      </div>
+
+      <div class="plan">
+        <div class="tag">Launch offer</div>
+        <h2>Builder</h2>
+        <div class="plan-price">$10 NZD</div>
+        <div class="plan-per">per month after a 30-day free trial</div>
+
+        <ul>
+          <li><strong>Marketplace access:</strong> eBay, Yahoo Auctions and Up Garage</li>
+          <li><strong>Smart Search:</strong> Refined search results, better matches and clearer listings from Japanese marketplaces</li>
+          <li><strong>Saved listings:</strong> Unlimited</li>
+          <li><strong>Alerts:</strong> Up to 10 notified searches</li>
+          <li><strong>Alert coverage:</strong> eBay, Yahoo Auctions and Up Garage</li>
+          <li><strong>Best for:</strong> Active builds and regular part hunting</li>
+        </ul>
+
+        <div class="plan-spacer"></div>
+
+        <div class="plan-feature-note">
+          30 days free, then $10 NZD/month unless cancelled. Cancel any time from My Garage.
+        </div>
+      </div>
+    </div>
+
+    <div class="plan-actions-row">
+      <a class="btn btn-secondary" href="/signup.html">Create Free Account</a>
+      <button class="btn" onclick="startCheckout('builder')">Start Free Trial</button>
+    </div>
+
+    <p class="note">
+      The Builder plan unlocks cleaner search results, higher saved listing limits and multi-marketplace alerts.
+    </p>
 
     <div id="site-footer"></div>
   </div>
@@ -255,7 +276,7 @@
       const data = await response.json();
 
       if (!response.ok || !data.url) {
-        alert(data?.details || data?.error || "Could not start checkout.");
+        alert(data?.details || "Could not start checkout.");
         return;
       }
 
