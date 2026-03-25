@@ -67,10 +67,9 @@ module.exports = async function handler(req, res) {
           .eq("stripe_customer_id", customerId)
           .single();
 
-        nextPlan =
-          profile?.plan === "collector" || profile?.plan === "builder"
-            ? profile.plan
-            : "builder";
+        if (status === "active" || status === "trialing" || status === "past_due") {
+  nextPlan = "builder";
+}
       }
 
       if (event.type === "customer.subscription.deleted") {
