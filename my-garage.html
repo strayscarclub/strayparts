@@ -223,13 +223,13 @@
 
       const plan = error || !profile ? "free" : (profile.plan || "free");
 
-planBadge.textContent = formatPlan(plan);
+      planBadge.textContent = formatPlan(plan);
 
-if (plan === "builder" || plan === "collector") {
-  planDetails.textContent = "Builder includes unlimited saved listings, Smart Search and up to 10 alerts.";
-} else {
-  planDetails.textContent = "Free includes up to 5 saved listings. Upgrade to unlock alerts and smarter search.";
-}
+      if (plan === "builder" || plan === "collector") {
+        planDetails.textContent = "Builder includes unlimited saved listings, Smart Search and up to 10 alerts.";
+      } else {
+        planDetails.textContent = "Free includes up to 5 saved listings. Upgrade to unlock alerts and smarter search.";
+      }
 
       mountSiteFooter();
     }
