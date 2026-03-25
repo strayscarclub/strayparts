@@ -29,35 +29,35 @@
     }
 
     .message {
-  margin: 12px 0 20px;
-  min-height: 20px;
-  line-height: 1.5;
-  text-align: center;
-  opacity: 0;
-  transform: translateY(-4px);
-  transition: opacity 0.25s ease, transform 0.25s ease;
-}
+      margin: 12px 0 20px;
+      min-height: 20px;
+      line-height: 1.5;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
 
-.message.show {
-  opacity: 1;
-  transform: translateY(0);
-}
+    .message.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
 
-.message.success {
-  color: #1f5130;
-  background: #e4f1e7;
-  border: 1px solid #b8d8bf;
-  border-radius: 10px;
-  padding: 12px 14px;
-}
+    .message.success {
+      color: #1f5130;
+      background: #e4f1e7;
+      border: 1px solid #b8d8bf;
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
 
-.message.error {
-  color: #7a1f1f;
-  background: #f7e5e5;
-  border: 1px solid #e1baba;
-  border-radius: 10px;
-  padding: 12px 14px;
-}
+    .message.error {
+      color: #7a1f1f;
+      background: #f7e5e5;
+      border: 1px solid #e1baba;
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
 
     .limit-card {
       background: #f4efe0;
@@ -110,8 +110,9 @@
     .create-alert-title {
       font-size: 28px;
       line-height: 1.1;
-      margin-bottom: 10px;
+      margin: 0 0 10px;
       color: white;
+      font-weight: normal;
     }
 
     .create-alert-copy {
@@ -157,7 +158,8 @@
     .alerts-list-title {
       font-size: 24px;
       color: #222;
-      margin-bottom: 6px;
+      margin: 0 0 6px;
+      font-weight: normal;
     }
 
     .alerts-list-copy {
@@ -191,6 +193,7 @@
       line-height: 1.3;
       color: white;
       margin: 0;
+      font-weight: normal;
     }
 
     .alert-badge {
@@ -250,11 +253,6 @@
         flex-direction: column;
         align-items: flex-start;
       }
-      .create-alert-title,
-.alerts-list-title {
-  margin: 0;
-  font-weight: normal;
-}
     }
   </style>
 </head>
@@ -318,34 +316,35 @@
   <script>
     let currentUser = null;
     let currentPlan = "free";
-let messageTimeout = null;
+    let messageTimeout = null;
 
-function showMessage(text, type = "success", autoHide = true) {
-  const message = document.getElementById("message");
-  if (!message) return;
+    function showMessage(text, type = "success", autoHide = true) {
+      const message = document.getElementById("message");
+      if (!message) return;
 
-  message.innerText = text;
-  message.className = `message show ${type}`;
+      message.innerText = text;
+      message.className = `message show ${type}`;
 
-  if (messageTimeout) {
-    clearTimeout(messageTimeout);
-    messageTimeout = null;
-  }
+      if (messageTimeout) {
+        clearTimeout(messageTimeout);
+        messageTimeout = null;
+      }
 
-  if (autoHide) {
-    messageTimeout = setTimeout(() => {
-      clearMessage();
-    }, 3500);
-  }
-}
+      if (autoHide) {
+        messageTimeout = setTimeout(() => {
+          clearMessage();
+        }, 3500);
+      }
+    }
 
-function clearMessage() {
-  const message = document.getElementById("message");
-  if (!message) return;
+    function clearMessage() {
+      const message = document.getElementById("message");
+      if (!message) return;
 
-  message.className = "message";
-  message.innerText = "";
-}
+      message.className = "message";
+      message.innerText = "";
+    }
+
     async function loadPage() {
       const user = await loadAccountBar({ requireAuth: true });
       if (!user) return;
@@ -363,7 +362,7 @@ function clearMessage() {
       if (profileError) {
         accountDiv.innerHTML = `
           <div class="limit-card">
-            <div class="limit-title">Could not load your alert limits</div>
+            <div class="limit-title">Could not load your alert info</div>
             <div class="limit-copy">Please try again.</div>
           </div>
         `;
@@ -371,32 +370,32 @@ function clearMessage() {
         return;
       }
 
-      currentPlan = profile.plan || "free";
+      currentPlan = profile?.plan || "free";
 
-const { data: alerts, error: alertsCountError } = await supabaseClient
-  .from("notified_searches")
-  .select("id")
-  .eq("user_id", currentUser.id);
+      const { data: alerts, error: alertsCountError } = await supabaseClient
+        .from("notified_searches")
+        .select("id")
+        .eq("user_id", currentUser.id);
 
-const currentCount = alertsCountError ? 0 : (alerts ? alerts.length : 0);
+      const currentCount = alertsCountError ? 0 : (alerts ? alerts.length : 0);
 
-let limit = 0;
-let title = "Alerts are not included on Free";
-let copy = "Upgrade your plan to set alerts and get notified when new listings appear.";
+      let limit = 0;
+      let title = "Alerts are not included on Free";
+      let copy = "Upgrade your plan to set alerts and get notified when new listings appear.";
 
-if (currentPlan === "builder" || currentPlan === "collector") {
-  limit = 10;
-  title = `${currentCount} of ${limit} alerts used`;
-  copy = "Builder keeps watch across eBay, Yahoo Auctions and Up Garage, checked every hour.";
-}
+      if (currentPlan === "builder" || currentPlan === "collector") {
+        limit = 10;
+        title = `${currentCount} of ${limit} alerts used`;
+        copy = "Builder keeps watch across eBay, Yahoo Auctions and Up Garage, checked every hour.";
+      }
 
-accountDiv.innerHTML = `
-  <div class="limit-card">
-    <div class="limit-kicker">Alert Capacity</div>
-    <div class="limit-title">${title}</div>
-    <div class="limit-copy">${copy}</div>
-  </div>
-`;
+      accountDiv.innerHTML = `
+        <div class="limit-card">
+          <div class="limit-kicker">Alert Capacity</div>
+          <div class="limit-title">${title}</div>
+          <div class="limit-copy">${copy}</div>
+        </div>
+      `;
 
       await loadAlerts();
       mountSiteFooter();
@@ -447,114 +446,104 @@ accountDiv.innerHTML = `
     }
 
     async function createAlert() {
-  const query = document.getElementById("alert-query").value.trim();
-  clearMessage();
+      const query = document.getElementById("alert-query").value.trim();
+      clearMessage();
 
-  if (!query) {
-    showMessage("Enter a part name to track.", "error", false);
-    return;
-  }
-
-  if (currentPlan === "free") {
-    const upgrade = confirm(
-      "Notified searches are available on paid plans only. Upgrade now?"
-    );
-
-    if (upgrade) {
-      window.location.href = "/pricing.html";
-    }
-
-    return;
-  }
-
-  const { data: existingAlerts, error: countError } = await supabaseClient
-    .from("notified_searches")
-    .select("id")
-    .eq("user_id", currentUser.id);
-
-  if (countError) {
-    showMessage("Could not check your alert limits.", "error", false);
-    return;
-  }
-
-  const limit = 10;
-
-if (existingAlerts.length >= limit) {
-  showMessage("Builder accounts can have up to 10 alerts.", "error", false);
-  return;
-}
-
-      if (upgrade) {
-        window.location.href = "/pricing.html";
+      if (!query) {
+        showMessage("Enter a part name to track.", "error", false);
+        return;
       }
-    } else {
-      showMessage("Collector accounts can have up to 30 alerts.", "error", false);
-    }
 
-    return;
-  }
+      if (currentPlan === "free") {
+        const upgrade = confirm(
+          "Notified searches are available on paid plans only. Upgrade now?"
+        );
 
-  const { data: duplicate, error: duplicateError } = await supabaseClient
-    .from("notified_searches")
-    .select("id")
-    .eq("user_id", currentUser.id)
-    .eq("query", query)
-    .maybeSingle();
+        if (upgrade) {
+          window.location.href = "/pricing.html";
+        }
 
-  if (duplicateError) {
-    showMessage("Could not check for duplicate alert.", "error", false);
-    return;
-  }
-
-  if (duplicate) {
-    showMessage("You already created an alert for this search.", "error", false);
-    return;
-  }
-
-  const { error } = await supabaseClient
-    .from("notified_searches")
-    .insert([
-      {
-        user_id: currentUser.id,
-        query: query,
-        is_active: true
+        return;
       }
-    ]);
 
-  if (error) {
-    showMessage(error.message, "error", false);
-    return;
-  }
+      const { data: existingAlerts, error: countError } = await supabaseClient
+        .from("notified_searches")
+        .select("id")
+        .eq("user_id", currentUser.id);
 
-  document.getElementById("alert-query").value = "";
-  showMessage("Alert created.", "success", true);
-  await loadAlerts();
-}
+      if (countError) {
+        showMessage("Could not check your alert limits.", "error", false);
+        return;
+      }
+
+      const limit = 10;
+
+      if (existingAlerts.length >= limit) {
+        showMessage("Builder accounts can have up to 10 alerts.", "error", false);
+        return;
+      }
+
+      const { data: duplicate, error: duplicateError } = await supabaseClient
+        .from("notified_searches")
+        .select("id")
+        .eq("user_id", currentUser.id)
+        .eq("query", query)
+        .maybeSingle();
+
+      if (duplicateError) {
+        showMessage("Could not check for duplicate alert.", "error", false);
+        return;
+      }
+
+      if (duplicate) {
+        showMessage("You already created an alert for this search.", "error", false);
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from("notified_searches")
+        .insert([
+          {
+            user_id: currentUser.id,
+            query: query,
+            is_active: true
+          }
+        ]);
+
+      if (error) {
+        showMessage(error.message, "error", false);
+        return;
+      }
+
+      document.getElementById("alert-query").value = "";
+      showMessage("Alert created.", "success", true);
+      await loadPage();
+    }
 
     function runSearch(query) {
       window.location.href = "/search.html?q=" + encodeURIComponent(query);
     }
 
     async function deleteAlert(alertId) {
-  clearMessage();
+      clearMessage();
 
-  const confirmed = confirm("Delete this alert?");
-  if (!confirmed) return;
+      const confirmed = confirm("Delete this alert?");
+      if (!confirmed) return;
 
-  const { error } = await supabaseClient
-    .from("notified_searches")
-    .delete()
-    .eq("id", alertId)
-    .eq("user_id", currentUser.id);
+      const { error } = await supabaseClient
+        .from("notified_searches")
+        .delete()
+        .eq("id", alertId)
+        .eq("user_id", currentUser.id);
 
-  if (error) {
-    showMessage("Could not delete alert.", "error", false);
-    return;
-  }
+      if (error) {
+        showMessage("Could not delete alert.", "error", false);
+        return;
+      }
 
-  showMessage("Alert deleted.", "success", true);
-  await loadAlerts();
-}
+      showMessage("Alert deleted.", "success", true);
+      await loadPage();
+    }
 
     document.addEventListener("keydown", function(event) {
       if (event.key === "Enter" && document.activeElement && document.activeElement.id === "alert-query") {
